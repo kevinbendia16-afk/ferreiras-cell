@@ -408,7 +408,7 @@ a:hover { color: var(--accent); opacity: 0.85; }
 
 /* ── Forms ── */
 .form-control, .form-select {
-  background: var(--bg-input);
+  background-color: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-sm);
@@ -417,7 +417,7 @@ a:hover { color: var(--accent); opacity: 0.85; }
   transition: var(--transition);
 }
 .form-control:focus, .form-select:focus {
-  background: var(--bg-input);
+  background-color: var(--bg-input);
   color: var(--text);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-muted);
