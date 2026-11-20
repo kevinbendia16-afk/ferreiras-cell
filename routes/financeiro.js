@@ -4,8 +4,9 @@ const pool = require('../db');
 // ─── Visão Geral (Dashboard Financeiro) ───
 router.get('/', async (req, res) => {
   const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+  const [ano, m] = mes.split('-').map(Number);
   const inicio = mes + '-01';
-  const fim = mes + '-31';
+  const fim = new Date(ano, m, 0).toISOString().slice(0, 10);
 
   const [receitasRes, despesasRes, contasPendRes, comprasPendRes, custosRes, ultimasContasRes] = await Promise.all([
     pool.query("SELECT COALESCE(SUM(valor),0) as total FROM contas WHERE tipo='receber' AND status='pago' AND data_pagamento BETWEEN $1 AND $2", [inicio, fim]),
