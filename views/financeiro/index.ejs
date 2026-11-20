@@ -1,73 +1,67 @@
 <%- include('../partials/header', { pageTitle: 'Financeiro' }) %>
 <div class="page-header">
   <h4><i class="bi bi-graph-up"></i> Visão Geral Financeira</h4>
-  <form class="d-flex gap-2">
+  <form class="d-flex gap-2 align-items-center">
     <input type="month" name="mes" class="form-control" value="<%= mes %>" style="width:180px">
-    <button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button>
+    <button class="btn btn-outline-success btn-sm"><i class="bi bi-funnel"></i> Filtrar</button>
   </form>
 </div>
 
 <div class="row g-3 mb-4">
   <div class="col-md-4 col-6">
-    <div class="stat-card green">
+    <div class="stat-card green animate-in">
       <i class="bi bi-arrow-up-circle stat-icon"></i>
       <div class="stat-value">R$ <%= receitas.toFixed(2) %></div>
-      <div class="stat-label">Receitas</div>
+      <div class="stat-label">📈 Receitas</div>
     </div>
   </div>
   <div class="col-md-4 col-6">
-    <div class="stat-card red">
+    <div class="stat-card red animate-in animate-in-delay-1">
       <i class="bi bi-arrow-down-circle stat-icon"></i>
       <div class="stat-value">R$ <%= despesas.toFixed(2) %></div>
-      <div class="stat-label">Despesas</div>
+      <div class="stat-label">📉 Despesas</div>
     </div>
   </div>
   <div class="col-md-4 col-6">
-    <div class="stat-card <%= lucro >= 0 ? 'green' : 'red' %>">
+    <div class="stat-card <%= lucro >= 0 ? 'green' : 'red' %> animate-in animate-in-delay-2">
       <i class="bi bi-trophy stat-icon"></i>
       <div class="stat-value">R$ <%= lucro.toFixed(2) %></div>
-      <div class="stat-label">Lucro</div>
+      <div class="stat-label"><%= lucro >= 0 ? '🏆' : '⚠️' %> Lucro</div>
     </div>
   </div>
 </div>
 
 <div class="row g-3 mb-4">
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body text-center">
-        <div class="text-warning mb-1" style="font-size:2rem"><i class="bi bi-exclamation-circle"></i></div>
-        <h3><%= contasPendentes %></h3>
-        <small class="text-muted">Contas Pendentes</small>
-        <div class="mt-2"><a href="/financeiro/contas?status=pendente" class="btn btn-sm btn-outline-success">Ver Contas</a></div>
-      </div>
+    <div class="fin-mini-card animate-in animate-in-delay-1">
+      <div class="fin-icon warning"><i class="bi bi-exclamation-circle"></i></div>
+      <h3><%= contasPendentes %></h3>
+      <small class="text-muted d-block mb-2">Contas Pendentes</small>
+      <a href="/financeiro/contas?status=pendente" class="btn btn-sm btn-outline-success">Ver Contas</a>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body text-center">
-        <div class="text-info mb-1" style="font-size:2rem"><i class="bi bi-bag"></i></div>
-        <h3><%= comprasPendentes %></h3>
-        <small class="text-muted">Compras Pendentes</small>
-        <div class="mt-2"><a href="/financeiro/compras?status=pendente" class="btn btn-sm btn-outline-success">Ver Compras</a></div>
-      </div>
+    <div class="fin-mini-card animate-in animate-in-delay-2">
+      <div class="fin-icon info"><i class="bi bi-bag"></i></div>
+      <h3><%= comprasPendentes %></h3>
+      <small class="text-muted d-block mb-2">Compras Pendentes</small>
+      <a href="/financeiro/compras?status=pendente" class="btn btn-sm btn-outline-success">Ver Compras</a>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body text-center">
-        <div class="text-danger mb-1" style="font-size:2rem"><i class="bi bi-clipboard-data"></i></div>
-        <h3>R$ <%= custosMensais.toFixed(2) %></h3>
-        <small class="text-muted">Custos Fixos/Mês</small>
-        <div class="mt-2"><a href="/financeiro/custos" class="btn btn-sm btn-outline-success">Gerenciar</a></div>
-      </div>
+    <div class="fin-mini-card animate-in animate-in-delay-3">
+      <div class="fin-icon danger"><i class="bi bi-clipboard-data"></i></div>
+      <h3>R$ <%= custosMensais.toFixed(2) %></h3>
+      <small class="text-muted d-block mb-2">Custos Fixos/Mês</small>
+      <a href="/financeiro/custos" class="btn btn-sm btn-outline-success">Gerenciar</a>
     </div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-clock-history text-success"></i> Últimas Movimentações</span>
-    <a href="/financeiro/contas/nova" class="btn btn-sm btn-success"><i class="bi bi-plus"></i> Nova Conta</a>
+    <span><i class="bi bi-clock-history text-success me-2"></i>Últimas Movimentações</span>
+    <a href="/financeiro/contas/nova" class="btn btn-sm btn-success"><i class="bi bi-plus me-1"></i>Nova Conta</a>
   </div>
   <div class="table-responsive">
     <table class="table table-hover mb-0">
@@ -75,14 +69,21 @@
       <tbody>
         <% ultimasContas.forEach(c => { %>
         <tr>
-          <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo %></span></td>
+          <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo === 'pagar' ? '↓ Pagar' : '↑ Receber' %></span></td>
           <td><%= c.descricao %></td>
-          <td>R$ <%= Number(c.valor).toFixed(2) %></td>
-          <td><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
+          <td class="fw-semibold">R$ <%= Number(c.valor).toFixed(2) %></td>
+          <td class="text-muted"><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
           <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>"><%= c.status %></span></td>
         </tr>
         <% }) %>
-        <% if (!ultimasContas.length) { %><tr><td colspan="5" class="text-center text-muted py-3">Nenhuma movimentação</td></tr><% } %>
+        <% if (!ultimasContas.length) { %>
+        <tr><td colspan="5">
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <div>Nenhuma movimentação</div>
+          </div>
+        </td></tr>
+        <% } %>
       </tbody>
     </table>
   </div>
