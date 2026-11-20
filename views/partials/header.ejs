@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ferreira's Cell - <%= typeof pageTitle !== 'undefined' ? pageTitle : 'Sistema' %></title>
@@ -50,7 +51,12 @@
         <li class="nav-item"><a class="nav-link<%= typeof pageTitle !== 'undefined' && pageTitle === 'Configurações' ? ' active' : '' %>" href="/configuracoes"><i class="bi bi-gear"></i> Config</a></li>
         <% } %>
       </ul>
-      <ul class="navbar-nav">
+      <ul class="navbar-nav align-items-center">
+        <li class="nav-item">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema" id="themeToggle">
+            <i class="bi bi-moon-fill" id="themeIcon"></i>
+          </button>
+        </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
             <span class="user-avatar"><%= user.nome ? user.nome.charAt(0).toUpperCase() : 'U' %></span>

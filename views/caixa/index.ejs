@@ -1,7 +1,7 @@
 <%- include('../partials/header', { pageTitle: 'Caixa' }) %>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4><i class="bi bi-cash-stack"></i> Caixa</h4>
-  <a href="/caixa/historico" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock-history"></i> Histórico</a>
+  <a href="/caixa/historico" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clock-history"></i> Historico</a>
 </div>
 
 <% if (!caixa) { %>
@@ -20,26 +20,26 @@
 <% } else { %>
   <div class="row g-3 mb-3">
     <div class="col-md-3">
-      <div class="card bg-light"><div class="card-body text-center"><small>Abertura</small><h5>R$ <%= Number(caixa.valor_abertura).toFixed(2) %></h5></div></div>
+      <div class="caixa-card abertura"><small>Abertura</small><h5>R$ <%= Number(caixa.valor_abertura).toFixed(2) %></h5></div>
     </div>
     <div class="col-md-3">
-      <div class="card bg-success text-white"><div class="card-body text-center"><small>Entradas</small><h5>R$ <%= totalEntradas.toFixed(2) %></h5></div></div>
+      <div class="caixa-card entradas"><small>Entradas</small><h5>R$ <%= totalEntradas.toFixed(2) %></h5></div>
     </div>
     <div class="col-md-3">
-      <div class="card bg-danger text-white"><div class="card-body text-center"><small>Saídas</small><h5>R$ <%= totalSaidas.toFixed(2) %></h5></div></div>
+      <div class="caixa-card saidas"><small>Saidas</small><h5>R$ <%= totalSaidas.toFixed(2) %></h5></div>
     </div>
     <div class="col-md-3">
-      <div class="card bg-primary text-white"><div class="card-body text-center"><small>Saldo</small><h5>R$ <%= (Number(caixa.valor_abertura) + totalEntradas - totalSaidas).toFixed(2) %></h5></div></div>
+      <div class="caixa-card saldo"><small>Saldo</small><h5>R$ <%= (Number(caixa.valor_abertura) + totalEntradas - totalSaidas).toFixed(2) %></h5></div>
     </div>
   </div>
 
   <div class="row g-3 mb-3">
     <div class="col-md-8">
       <div class="card">
-        <div class="card-header">Movimentações</div>
+        <div class="card-header">Movimentacoes</div>
         <div class="table-responsive">
           <table class="table table-sm mb-0">
-            <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Pagamento</th><th>Hora</th></tr></thead>
+            <thead><tr><th>Tipo</th><th>Descricao</th><th>Valor</th><th>Pagamento</th><th>Hora</th></tr></thead>
             <tbody>
               <% movimentacoes.forEach(m => { %>
               <tr class="<%= m.tipo==='entrada'?'table-success':'table-danger' %>">
@@ -50,7 +50,7 @@
                 <td><%= new Date(m.criado_em).toLocaleTimeString('pt-BR') %></td>
               </tr>
               <% }) %>
-              <% if (!movimentacoes.length) { %><tr><td colspan="5" class="text-muted text-center">Sem movimentações</td></tr><% } %>
+              <% if (!movimentacoes.length) { %><tr><td colspan="5" class="text-muted text-center">Sem movimentacoes</td></tr><% } %>
             </tbody>
           </table>
         </div>
@@ -58,13 +58,13 @@
     </div>
     <div class="col-md-4">
       <div class="card mb-3">
-        <div class="card-header">Nova Movimentação</div>
+        <div class="card-header">Nova Movimentacao</div>
         <div class="card-body">
           <form method="POST" action="/caixa/movimentacao">
             <div class="mb-2">
-              <select name="tipo" class="form-select"><option value="entrada">Entrada</option><option value="saida">Saída</option></select>
+              <select name="tipo" class="form-select"><option value="entrada">Entrada</option><option value="saida">Saida</option></select>
             </div>
-            <div class="mb-2"><input type="text" name="descricao" class="form-control" placeholder="Descrição" required></div>
+            <div class="mb-2"><input type="text" name="descricao" class="form-control" placeholder="Descricao" required></div>
             <div class="mb-2"><input type="number" name="valor" class="form-control" step="0.01" placeholder="Valor" required></div>
             <div class="mb-2"><input type="text" name="categoria" class="form-control" placeholder="Categoria (opcional)"></div>
             <div class="mb-2">
@@ -72,8 +72,8 @@
                 <option value="">-</option>
                 <option value="Dinheiro">Dinheiro</option>
                 <option value="Pix">Pix</option>
-                <option value="Cartão Débito">Cartão Débito</option>
-                <option value="Cartão Crédito">Cartão Crédito</option>
+                <option value="Cartao Debito">Cartao Debito</option>
+                <option value="Cartao Credito">Cartao Credito</option>
               </select>
             </div>
             <button class="btn btn-success w-100"><i class="bi bi-plus"></i> Registrar</button>
