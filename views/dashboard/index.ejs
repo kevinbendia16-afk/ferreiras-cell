@@ -5,7 +5,7 @@
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 %>
 
-<div class="greeting"><%= greeting %>, <strong><%= user.nome %></strong> 👋</div>
+<div class="greeting"><%= greeting %>, <strong><%= user.nome %></strong></div>
 <div class="greeting-sub"><%= new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) %></div>
 
 <div class="quick-actions">

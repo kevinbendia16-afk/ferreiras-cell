@@ -12,21 +12,21 @@
     <div class="stat-card green animate-in">
       <i class="bi bi-arrow-up-circle stat-icon"></i>
       <div class="stat-value">R$ <%= receitas.toFixed(2) %></div>
-      <div class="stat-label">📈 Receitas</div>
+      <div class="stat-label">Receitas</div>
     </div>
   </div>
   <div class="col-md-4 col-6">
     <div class="stat-card red animate-in animate-in-delay-1">
       <i class="bi bi-arrow-down-circle stat-icon"></i>
       <div class="stat-value">R$ <%= despesas.toFixed(2) %></div>
-      <div class="stat-label">📉 Despesas</div>
+      <div class="stat-label">Despesas</div>
     </div>
   </div>
   <div class="col-md-4 col-6">
     <div class="stat-card <%= lucro >= 0 ? 'green' : 'red' %> animate-in animate-in-delay-2">
       <i class="bi bi-trophy stat-icon"></i>
       <div class="stat-value">R$ <%= lucro.toFixed(2) %></div>
-      <div class="stat-label"><%= lucro >= 0 ? '🏆' : '⚠️' %> Lucro</div>
+      <div class="stat-label">Lucro</div>
     </div>
   </div>
 </div>
