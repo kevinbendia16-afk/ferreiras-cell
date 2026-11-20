@@ -1,0 +1,21 @@
+<%- include('../partials/header', { pageTitle: 'Histórico de Caixa' }) %>
+<h4><i class="bi bi-clock-history"></i> Histórico de Caixa</h4>
+<a href="/caixa" class="btn btn-outline-secondary btn-sm mb-3">Voltar ao Caixa</a>
+<div class="table-responsive">
+  <table class="table">
+    <thead><tr><th>Usuário</th><th>Abertura</th><th>Fechamento</th><th>Valor Abertura</th><th>Valor Fechamento</th><th>Status</th></tr></thead>
+    <tbody>
+      <% caixas.forEach(c => { %>
+      <tr>
+        <td><%= c.usuario_nome %></td>
+        <td><%= new Date(c.data_abertura).toLocaleString('pt-BR') %></td>
+        <td><%= c.data_fechamento ? new Date(c.data_fechamento).toLocaleString('pt-BR') : '-' %></td>
+        <td>R$ <%= Number(c.valor_abertura).toFixed(2) %></td>
+        <td><%= c.valor_fechamento != null ? 'R$ '+Number(c.valor_fechamento).toFixed(2) : '-' %></td>
+        <td><span class="badge bg-<%= c.status==='aberto'?'success':'secondary' %>"><%= c.status %></span></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../partials/footer') %>

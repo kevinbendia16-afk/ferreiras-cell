@@ -1,0 +1,35 @@
+<%- include('../partials/header', { pageTitle: conta ? 'Editar Conta' : 'Nova Conta' }) %>
+<h4><i class="bi bi-wallet2"></i> <%= conta && conta.id ? 'Editar' : 'Nova' %> Conta</h4>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+<form method="POST" action="/financeiro<%= conta && conta.id ? '/'+conta.id : '' %>">
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label">Tipo *</label>
+      <select name="tipo" class="form-select" required>
+        <option value="pagar" <%= conta && conta.tipo==='pagar'?'selected':'' %>>A Pagar</option>
+        <option value="receber" <%= conta && conta.tipo==='receber'?'selected':'' %>>A Receber</option>
+      </select>
+    </div>
+    <div class="col-md-5"><label class="form-label">Descrição *</label><input type="text" name="descricao" class="form-control" value="<%= conta ? conta.descricao : '' %>" required></div>
+    <div class="col-md-2"><label class="form-label">Valor *</label><input type="number" name="valor" class="form-control" step="0.01" value="<%= conta ? conta.valor : '' %>" required></div>
+    <div class="col-md-2"><label class="form-label">Vencimento</label><input type="date" name="data_vencimento" class="form-control" value="<%= conta && conta.data_vencimento ? new Date(conta.data_vencimento).toISOString().slice(0,10) : '' %>"></div>
+    <div class="col-md-3"><label class="form-label">Categoria</label><input type="text" name="categoria" class="form-control" value="<%= conta ? conta.categoria||'' : '' %>" placeholder="Ex: Aluguel, Fornecedor"></div>
+    <% if (conta && conta.id) { %>
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <% ['pendente','pago','atrasado','cancelado'].forEach(s => { %>
+        <option value="<%= s %>" <%= conta.status===s?'selected':'' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-3"><label class="form-label">Data Pagamento</label><input type="date" name="data_pagamento" class="form-control" value="<%= conta && conta.data_pagamento ? new Date(conta.data_pagamento).toISOString().slice(0,10) : '' %>"></div>
+    <% } %>
+    <div class="col-12"><label class="form-label">Observações</label><textarea name="observacoes" class="form-control" rows="2"><%= conta ? conta.observacoes||'' : '' %></textarea></div>
+  </div>
+  <div class="mt-3">
+    <button class="btn btn-success"><i class="bi bi-check"></i> Salvar</button>
+    <a href="/financeiro" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+<%- include('../partials/footer') %>

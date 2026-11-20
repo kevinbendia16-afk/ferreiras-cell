@@ -1,0 +1,51 @@
+<%- include('../partials/header', { pageTitle: 'Estoque' }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-box-seam"></i> Estoque</h4>
+  <div>
+    <a href="/estoque/categorias" class="btn btn-outline-secondary btn-sm"><i class="bi bi-tags"></i> Categorias</a>
+    <a href="/estoque/novo" class="btn btn-success"><i class="bi bi-plus"></i> Novo Produto</a>
+  </div>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-4">
+    <input type="text" name="busca" class="form-control" placeholder="Buscar produto..." value="<%= busca %>">
+  </div>
+  <div class="col-md-3">
+    <select name="categoria" class="form-select">
+      <option value="">Todas categorias</option>
+      <% categorias.forEach(c => { %>
+      <option value="<%= c.id %>" <%= String(categoria)===String(c.id)?'selected':'' %>><%= c.nome %> (<%= c.tipo %>)</option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+<div class="table-responsive">
+  <table class="table table-hover table-sm">
+    <thead><tr><th>Produto</th><th>Categoria</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Mín</th><th>Ações</th></tr></thead>
+    <tbody>
+      <% produtos.forEach(p => { %>
+      <tr class="<%= p.estoque_atual <= p.estoque_minimo ? 'table-warning' : '' %>">
+        <td><%= p.nome %></td>
+        <td><small><%= p.categoria_nome || '-' %></small></td>
+        <td>R$ <%= Number(p.preco_custo).toFixed(2) %></td>
+        <td>R$ <%= Number(p.preco_venda).toFixed(2) %></td>
+        <td><strong class="<%= p.estoque_atual <= p.estoque_minimo ? 'text-danger' : '' %>"><%= p.estoque_atual %></strong></td>
+        <td><%= p.estoque_minimo %></td>
+        <td>
+          <form method="POST" action="/estoque/<%= p.id %>/entrada" class="d-inline">
+            <div class="input-group input-group-sm" style="width:130px;display:inline-flex!important">
+              <input type="number" name="quantidade" class="form-control" value="1" min="1" style="width:50px">
+              <button class="btn btn-outline-success" title="Entrada"><i class="bi bi-plus-circle"></i></button>
+            </div>
+          </form>
+          <a href="/estoque/<%= p.id %>/editar" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (!produtos.length) { %><tr><td colspan="7" class="text-center text-muted">Nenhum produto</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<small class="text-muted">Total: <%= produtos.length %> produtos</small>
+<%- include('../partials/footer') %>

@@ -1,0 +1,29 @@
+<%- include('../partials/header', { pageTitle: usuario ? 'Editar Usuário' : 'Novo Usuário' }) %>
+<h4><%= usuario && usuario.id ? 'Editar' : 'Novo' %> Usuário</h4>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+<form method="POST" action="/configuracoes/usuarios<%= usuario && usuario.id ? '/'+usuario.id : '' %>">
+  <div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Nome *</label><input type="text" name="nome" class="form-control" value="<%= usuario ? usuario.nome : '' %>" required></div>
+    <div class="col-md-4"><label class="form-label">Email *</label><input type="email" name="email" class="form-control" value="<%= usuario ? usuario.email : '' %>" required></div>
+    <div class="col-md-4">
+      <label class="form-label">Papel *</label>
+      <select name="papel" class="form-select">
+        <option value="tecnico" <%= usuario && usuario.papel==='tecnico'?'selected':'' %>>Técnico</option>
+        <option value="atendente" <%= usuario && usuario.papel==='atendente'?'selected':'' %>>Atendente</option>
+        <option value="admin" <%= usuario && usuario.papel==='admin'?'selected':'' %>>Admin</option>
+      </select>
+    </div>
+    <div class="col-md-4"><label class="form-label">Senha <%= usuario && usuario.id ? '(deixe vazio p/ manter)' : '*' %></label><input type="password" name="senha" class="form-control" <%= usuario && usuario.id ? '' : 'required' %>></div>
+    <% if (usuario && usuario.id) { %>
+    <div class="col-md-4">
+      <label class="form-label">Ativo</label>
+      <select name="ativo" class="form-select"><option value="true" <%= usuario.ativo?'selected':'' %>>Sim</option><option value="false" <%= !usuario.ativo?'selected':'' %>>Não</option></select>
+    </div>
+    <% } %>
+  </div>
+  <div class="mt-3">
+    <button class="btn btn-success"><i class="bi bi-check"></i> Salvar</button>
+    <a href="/configuracoes" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+<%- include('../partials/footer') %>

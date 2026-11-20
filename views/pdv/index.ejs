@@ -1,0 +1,123 @@
+<%- include('../partials/header', { pageTitle: 'PDV - Ponto de Venda' }) %>
+<h4><i class="bi bi-cart3"></i> PDV - Venda Balcão</h4>
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header">Produtos disponíveis</div>
+      <div class="card-body">
+        <input type="text" id="buscaProduto" class="form-control mb-2" placeholder="Buscar produto...">
+        <div class="table-responsive" style="max-height:400px;overflow-y:auto">
+          <table class="table table-sm table-hover">
+            <thead><tr><th>Produto</th><th>Preço</th><th>Estoque</th><th></th></tr></thead>
+            <tbody id="listaProdutos">
+              <% produtos.forEach(p => { %>
+              <tr data-nome="<%= p.nome.toLowerCase() %>">
+                <td><%= p.nome %><br><small class="text-muted"><%= p.categoria_nome %></small></td>
+                <td>R$ <%= Number(p.preco_venda).toFixed(2) %></td>
+                <td><%= p.estoque_atual %></td>
+                <td><button class="btn btn-sm btn-success btn-add" data-id="<%= p.id %>" data-nome="<%= p.nome %>" data-preco="<%= p.preco_venda %>" data-estoque="<%= p.estoque_atual %>"><i class="bi bi-plus"></i></button></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">Carrinho</div>
+      <div class="card-body">
+        <table class="table table-sm">
+          <thead><tr><th>Item</th><th>Qtd</th><th>Sub</th><th></th></tr></thead>
+          <tbody id="carrinho"></tbody>
+          <tfoot><tr><td colspan="2"><strong>Total</strong></td><td colspan="2"><strong id="totalCarrinho">R$ 0.00</strong></td></tr></tfoot>
+        </table>
+        <hr>
+        <div class="mb-2">
+          <label class="form-label">Cliente (opcional)</label>
+          <select id="clienteVenda" class="form-select">
+            <option value="">Sem cliente</option>
+            <% clientes.forEach(c => { %>
+            <option value="<%= c.id %>"><%= c.nome %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Pagamento</label>
+          <select id="formaPagamento" class="form-select">
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão Débito">Cartão Débito</option>
+            <option value="Cartão Crédito">Cartão Crédito</option>
+          </select>
+        </div>
+        <button id="btnFinalizar" class="btn btn-success w-100" disabled><i class="bi bi-check-circle"></i> Finalizar Venda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const carrinho = [];
+
+document.getElementById('buscaProduto').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#listaProdutos tr').forEach(tr => {
+    tr.style.display = tr.dataset.nome.includes(q) ? '' : 'none';
+  });
+});
+
+document.querySelectorAll('.btn-add').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const id = this.dataset.id, nome = this.dataset.nome, preco = Number(this.dataset.preco), estoque = Number(this.dataset.estoque);
+    const existing = carrinho.find(i => i.produto_id == id);
+    if (existing) {
+      if (existing.quantidade >= estoque) return alert('Estoque insuficiente');
+      existing.quantidade++;
+    } else {
+      carrinho.push({ produto_id: id, nome, preco, quantidade: 1, estoque });
+    }
+    renderCarrinho();
+  });
+});
+
+function renderCarrinho() {
+  const tbody = document.getElementById('carrinho');
+  tbody.innerHTML = '';
+  let total = 0;
+  carrinho.forEach((item, i) => {
+    const sub = item.preco * item.quantidade;
+    total += sub;
+    tbody.innerHTML += '<tr><td>'+item.nome+'</td><td><input type="number" value="'+item.quantidade+'" min="1" max="'+item.estoque+'" style="width:50px" onchange="updateQtd('+i+',this.value)"></td><td>R$ '+sub.toFixed(2)+'</td><td><button class="btn btn-sm btn-outline-danger" onclick="removeItem('+i+')"><i class="bi bi-trash"></i></button></td></tr>';
+  });
+  document.getElementById('totalCarrinho').textContent = 'R$ ' + total.toFixed(2);
+  document.getElementById('btnFinalizar').disabled = carrinho.length === 0;
+}
+
+function updateQtd(i, v) { carrinho[i].quantidade = Number(v); renderCarrinho(); }
+function removeItem(i) { carrinho.splice(i, 1); renderCarrinho(); }
+
+document.getElementById('btnFinalizar').addEventListener('click', async function() {
+  if (!carrinho.length) return;
+  if (!confirm('Finalizar venda?')) return;
+  const itens = carrinho.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }));
+  const res = await fetch('/pdv/vender', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cliente_id: document.getElementById('clienteVenda').value || null,
+      forma_pagamento: document.getElementById('formaPagamento').value,
+      itens: JSON.stringify(itens)
+    })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    alert('Venda #' + data.venda_id + ' finalizada! Total: R$ ' + Number(data.valor_total).toFixed(2));
+    location.reload();
+  } else {
+    alert('Erro: ' + data.error);
+  }
+});
+</script>
+<%- include('../partials/footer') %>

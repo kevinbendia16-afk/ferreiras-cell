@@ -1,0 +1,93 @@
+<%- include('../partials/header', { pageTitle: 'OS ' + os.numero }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-tools"></i> OS <%= os.numero %></h4>
+  <div>
+    <a href="/ordens/<%= os.id %>/editar" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+    <a href="/ordens" class="btn btn-outline-secondary btn-sm">Voltar</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">Dados do Aparelho</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4"><strong>Cliente:</strong> <a href="/clientes/<%= os.cliente_id %>"><%= os.cliente_nome %></a></div>
+          <div class="col-md-3"><strong>Telefone:</strong> <%= os.cliente_telefone || '-' %></div>
+          <div class="col-md-3"><strong>Aparelho:</strong> <%= os.aparelho_marca %> <%= os.aparelho_modelo %></div>
+          <div class="col-md-2"><strong>IMEI:</strong> <%= os.imei || '-' %></div>
+        </div>
+        <hr>
+        <p><strong>Defeito:</strong> <%= os.defeito_relatado %></p>
+        <% if (os.diagnostico) { %><p><strong>Diagnóstico:</strong> <%= os.diagnostico %></p><% } %>
+        <% if (os.solucao) { %><p><strong>Solução:</strong> <%= os.solucao %></p><% } %>
+        <% if (os.observacoes) { %><p><strong>Obs:</strong> <%= os.observacoes %></p><% } %>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Resumo</div>
+      <div class="card-body">
+        <p><strong>Status:</strong> <span class="badge bg-<%= os.status==='entregue'?'success':os.status==='cancelada'?'danger':os.status==='pronto'?'info':'warning' %> fs-6"><%= os.status %></span></p>
+        <p><strong>Técnico:</strong> <%= os.tecnico_nome || 'Não atribuído' %></p>
+        <p><strong>Entrada:</strong> <%= new Date(os.data_entrada).toLocaleDateString('pt-BR') %></p>
+        <% if (os.data_previsao) { %><p><strong>Previsão:</strong> <%= new Date(os.data_previsao).toLocaleDateString('pt-BR') %></p><% } %>
+        <% if (os.data_conclusao) { %><p><strong>Conclusão:</strong> <%= new Date(os.data_conclusao).toLocaleDateString('pt-BR') %></p><% } %>
+        <hr>
+        <p>Serviço: <strong>R$ <%= Number(os.valor_servico||0).toFixed(2) %></strong></p>
+        <p>Peças: <strong>R$ <%= Number(os.valor_pecas||0).toFixed(2) %></strong></p>
+        <h5 class="text-success">Total: R$ <%= Number(os.valor_total||0).toFixed(2) %></h5>
+        <% if (os.forma_pagamento) { %><p><strong>Pagamento:</strong> <%= os.forma_pagamento %></p><% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Peças Utilizadas</div>
+  <div class="card-body">
+    <table class="table table-sm mb-3">
+      <thead><tr><th>Peça</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th></th></tr></thead>
+      <tbody>
+        <% pecas.forEach(p => { %>
+        <tr>
+          <td><%= p.produto_nome %></td>
+          <td><%= p.quantidade %></td>
+          <td>R$ <%= Number(p.preco_unitario).toFixed(2) %></td>
+          <td>R$ <%= Number(p.subtotal).toFixed(2) %></td>
+          <td>
+            <form method="POST" action="/ordens/<%= os.id %>/pecas/<%= p.id %>/remover" style="display:inline" onsubmit="return confirm('Remover peça?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!pecas.length) { %><tr><td colspan="5" class="text-muted">Nenhuma peça adicionada</td></tr><% } %>
+      </tbody>
+    </table>
+
+    <% if (!['entregue','cancelada'].includes(os.status)) { %>
+    <form method="POST" action="/ordens/<%= os.id %>/pecas" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label">Adicionar Peça</label>
+        <select name="produto_id" class="form-select" required>
+          <option value="">Selecione...</option>
+          <% produtos.forEach(p => { %>
+          <option value="<%= p.id %>"><%= p.nome %> (estoque: <%= p.estoque_atual %>) - R$ <%= Number(p.preco_venda).toFixed(2) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Qtd</label>
+        <input type="number" name="quantidade" class="form-control" value="1" min="1" required>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-success"><i class="bi bi-plus"></i> Adicionar</button>
+      </div>
+    </form>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

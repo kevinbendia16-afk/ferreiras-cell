@@ -1,0 +1,71 @@
+<%- include('../partials/header', { pageTitle: 'Dashboard' }) %>
+<h4><i class="bi bi-speedometer2"></i> Dashboard</h4>
+
+<div class="row g-3 mb-4">
+  <div class="col-md col-6">
+    <div class="card bg-primary text-white">
+      <div class="card-body text-center">
+        <h2><%= stats.osAbertas || 0 %></h2>
+        <small>OS Abertas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="card bg-info text-white">
+      <div class="card-body text-center">
+        <h2><%= stats.osHoje || 0 %></h2>
+        <small>OS Hoje</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="card bg-success text-white">
+      <div class="card-body text-center">
+        <h2>R$ <%= Number(stats.faturamentoHoje || 0).toFixed(2) %></h2>
+        <small>Faturamento Hoje</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="card bg-warning text-dark">
+      <div class="card-body text-center">
+        <h2><%= stats.estoqueBaixo || 0 %></h2>
+        <small>Estoque Baixo</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md col-6">
+    <div class="card bg-secondary text-white">
+      <div class="card-body text-center">
+        <h2><%= stats.totalClientes || 0 %></h2>
+        <small>Clientes</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history"></i> Últimas Ordens de Serviço</span>
+    <a href="/ordens/nova" class="btn btn-sm btn-success"><i class="bi bi-plus"></i> Nova OS</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Número</th><th>Cliente</th><th>Aparelho</th><th>Status</th><th>Valor</th><th>Data</th></tr></thead>
+      <tbody>
+        <% ultimasOS.forEach(os => { %>
+        <tr onclick="location.href='/ordens/<%= os.id %>'" style="cursor:pointer">
+          <td><%= os.numero %></td>
+          <td><%= os.cliente_nome || '-' %></td>
+          <td><%= os.aparelho_marca %> <%= os.aparelho_modelo %></td>
+          <td><span class="badge bg-<%= os.status==='entregue'?'success':os.status==='cancelada'?'danger':os.status==='pronto'?'info':'warning' %>"><%= os.status %></span></td>
+          <td>R$ <%= Number(os.valor_total||0).toFixed(2) %></td>
+          <td><%= new Date(os.criado_em).toLocaleDateString('pt-BR') %></td>
+        </tr>
+        <% }) %>
+        <% if (!ultimasOS.length) { %><tr><td colspan="6" class="text-center text-muted">Nenhuma OS registrada</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

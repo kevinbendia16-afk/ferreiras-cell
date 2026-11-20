@@ -1,0 +1,49 @@
+<%- include('../partials/header', { pageTitle: cliente.nome }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-person"></i> <%= cliente.nome %></h4>
+  <a href="/clientes/<%= cliente.id %>/editar" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><strong>Telefone:</strong> <%= cliente.telefone || '-' %></div>
+  <div class="col-md-3"><strong>Email:</strong> <%= cliente.email || '-' %></div>
+  <div class="col-md-3"><strong>CPF:</strong> <%= cliente.cpf || '-' %></div>
+  <div class="col-md-3"><strong>Endereço:</strong> <%= cliente.endereco || '-' %></div>
+</div>
+
+<h5><i class="bi bi-tools"></i> Ordens de Serviço (<%= ordens.length %>)</h5>
+<div class="table-responsive mb-4">
+  <table class="table table-sm">
+    <thead><tr><th>Número</th><th>Aparelho</th><th>Status</th><th>Valor</th><th>Data</th></tr></thead>
+    <tbody>
+      <% ordens.forEach(os => { %>
+      <tr onclick="location.href='/ordens/<%= os.id %>'" style="cursor:pointer">
+        <td><%= os.numero %></td>
+        <td><%= os.aparelho_marca %> <%= os.aparelho_modelo %></td>
+        <td><span class="badge bg-<%= os.status==='entregue'?'success':os.status==='cancelada'?'danger':'warning' %>"><%= os.status %></span></td>
+        <td>R$ <%= Number(os.valor_total||0).toFixed(2) %></td>
+        <td><%= new Date(os.criado_em).toLocaleDateString('pt-BR') %></td>
+      </tr>
+      <% }) %>
+      <% if (!ordens.length) { %><tr><td colspan="5" class="text-muted">Nenhuma OS</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<h5><i class="bi bi-cart3"></i> Compras (<%= vendas.length %>)</h5>
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th>ID</th><th>Valor</th><th>Pagamento</th><th>Data</th></tr></thead>
+    <tbody>
+      <% vendas.forEach(v => { %>
+      <tr>
+        <td>#<%= v.id %></td>
+        <td>R$ <%= Number(v.valor_total).toFixed(2) %></td>
+        <td><%= v.forma_pagamento || '-' %></td>
+        <td><%= new Date(v.criado_em).toLocaleDateString('pt-BR') %></td>
+      </tr>
+      <% }) %>
+      <% if (!vendas.length) { %><tr><td colspan="4" class="text-muted">Nenhuma compra</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<%- include('../partials/footer') %>
