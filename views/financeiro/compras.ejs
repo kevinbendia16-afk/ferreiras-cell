@@ -1,0 +1,37 @@
+<%- include('../partials/header', { pageTitle: 'Compras' }) %>
+<div class="page-header">
+  <h4><i class="bi bi-bag"></i> Compras de Fornecedores</h4>
+  <a href="/financeiro/compras/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova Compra</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-3">
+    <select name="status" class="form-select">
+      <option value="">Todos</option>
+      <option value="pendente" <%= status==='pendente'?'selected':'' %>>Pendente</option>
+      <option value="pago" <%= status==='pago'?'selected':'' %>>Pago</option>
+      <option value="cancelado" <%= status==='cancelado'?'selected':'' %>>Cancelado</option>
+    </select>
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Fornecedor</th><th>Data</th><th>Valor Total</th><th>Pagamento</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% compras.forEach(c => { %>
+        <tr onclick="location.href='/financeiro/compras/<%= c.id %>'">
+          <td><%= c.fornecedor %></td>
+          <td><%= new Date(c.data_compra).toLocaleDateString('pt-BR') %></td>
+          <td>R$ <%= Number(c.valor_total).toFixed(2) %></td>
+          <td><%= c.forma_pagamento || '-' %></td>
+          <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='cancelado'?'secondary':'warning' %>"><%= c.status %></span></td>
+          <td><a href="/financeiro/compras/<%= c.id %>" class="btn btn-sm btn-outline-success"><i class="bi bi-eye"></i></a></td>
+        </tr>
+        <% }) %>
+        <% if (!compras.length) { %><tr><td colspan="6" class="text-center text-muted py-3">Nenhuma compra</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

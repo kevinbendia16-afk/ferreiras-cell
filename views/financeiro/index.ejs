@@ -1,38 +1,90 @@
 <%- include('../partials/header', { pageTitle: 'Financeiro' }) %>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4><i class="bi bi-wallet2"></i> Financeiro</h4>
-  <a href="/financeiro/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova Conta</a>
+<div class="page-header">
+  <h4><i class="bi bi-graph-up"></i> Visão Geral Financeira</h4>
+  <form class="d-flex gap-2">
+    <input type="month" name="mes" class="form-control" value="<%= mes %>" style="width:180px">
+    <button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button>
+  </form>
 </div>
-<form class="row g-2 mb-3">
-  <div class="col-md-3">
-    <select name="tipo" class="form-select"><option value="">Todos</option><option value="pagar" <%= tipo==='pagar'?'selected':'' %>>A Pagar</option><option value="receber" <%= tipo==='receber'?'selected':'' %>>A Receber</option></select>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4 col-6">
+    <div class="stat-card green">
+      <i class="bi bi-arrow-up-circle stat-icon"></i>
+      <div class="stat-value">R$ <%= receitas.toFixed(2) %></div>
+      <div class="stat-label">Receitas</div>
+    </div>
   </div>
-  <div class="col-md-3">
-    <select name="status" class="form-select"><option value="">Todos status</option><option value="pendente" <%= status==='pendente'?'selected':'' %>>Pendente</option><option value="pago" <%= status==='pago'?'selected':'' %>>Pago</option><option value="atrasado" <%= status==='atrasado'?'selected':'' %>>Atrasado</option></select>
+  <div class="col-md-4 col-6">
+    <div class="stat-card red">
+      <i class="bi bi-arrow-down-circle stat-icon"></i>
+      <div class="stat-value">R$ <%= despesas.toFixed(2) %></div>
+      <div class="stat-label">Despesas</div>
+    </div>
   </div>
-  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button></div>
-</form>
-<div class="table-responsive">
-  <table class="table table-hover">
-    <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead>
-    <tbody>
-      <% contas.forEach(c => { %>
-      <tr class="<%= c.status==='atrasado'?'table-danger':c.status==='pago'?'table-success':'' %>">
-        <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo %></span></td>
-        <td><%= c.descricao %> <% if(c.categoria){%><small class="text-muted">(<%= c.categoria %>)</small><%}%></td>
-        <td>R$ <%= Number(c.valor).toFixed(2) %></td>
-        <td><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
-        <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>"><%= c.status %></span></td>
-        <td>
-          <% if (c.status !== 'pago') { %>
-          <form method="POST" action="/financeiro/<%= c.id %>/pagar" class="d-inline"><button class="btn btn-sm btn-outline-success" title="Marcar como pago"><i class="bi bi-check"></i></button></form>
-          <% } %>
-          <a href="/financeiro/<%= c.id %>/editar" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-        </td>
-      </tr>
-      <% }) %>
-      <% if (!contas.length) { %><tr><td colspan="6" class="text-center text-muted">Nenhuma conta</td></tr><% } %>
-    </tbody>
-  </table>
+  <div class="col-md-4 col-6">
+    <div class="stat-card <%= lucro >= 0 ? 'green' : 'red' %>">
+      <i class="bi bi-trophy stat-icon"></i>
+      <div class="stat-value">R$ <%= lucro.toFixed(2) %></div>
+      <div class="stat-label">Lucro</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-warning mb-1" style="font-size:2rem"><i class="bi bi-exclamation-circle"></i></div>
+        <h3><%= contasPendentes %></h3>
+        <small class="text-muted">Contas Pendentes</small>
+        <div class="mt-2"><a href="/financeiro/contas?status=pendente" class="btn btn-sm btn-outline-success">Ver Contas</a></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-info mb-1" style="font-size:2rem"><i class="bi bi-bag"></i></div>
+        <h3><%= comprasPendentes %></h3>
+        <small class="text-muted">Compras Pendentes</small>
+        <div class="mt-2"><a href="/financeiro/compras?status=pendente" class="btn btn-sm btn-outline-success">Ver Compras</a></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="text-danger mb-1" style="font-size:2rem"><i class="bi bi-clipboard-data"></i></div>
+        <h3>R$ <%= custosMensais.toFixed(2) %></h3>
+        <small class="text-muted">Custos Fixos/Mês</small>
+        <div class="mt-2"><a href="/financeiro/custos" class="btn btn-sm btn-outline-success">Gerenciar</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history text-success"></i> Últimas Movimentações</span>
+    <a href="/financeiro/contas/nova" class="btn btn-sm btn-success"><i class="bi bi-plus"></i> Nova Conta</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr></thead>
+      <tbody>
+        <% ultimasContas.forEach(c => { %>
+        <tr>
+          <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo %></span></td>
+          <td><%= c.descricao %></td>
+          <td>R$ <%= Number(c.valor).toFixed(2) %></td>
+          <td><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
+          <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>"><%= c.status %></span></td>
+        </tr>
+        <% }) %>
+        <% if (!ultimasContas.length) { %><tr><td colspan="5" class="text-center text-muted py-3">Nenhuma movimentação</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
 </div>
 <%- include('../partials/footer') %>

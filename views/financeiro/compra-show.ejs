@@ -1,0 +1,57 @@
+<%- include('../partials/header', { pageTitle: 'Compra #' + compra.id }) %>
+<div class="page-header">
+  <h4><i class="bi bi-bag"></i> Compra #<%= compra.id %></h4>
+  <a href="/financeiro/compras" class="btn btn-outline-secondary btn-sm">Voltar</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">Itens da Compra</div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            <% itens.forEach(i => { %>
+            <tr>
+              <td><%= i.produto_nome || 'Produto removido' %></td>
+              <td><%= i.quantidade %></td>
+              <td>R$ <%= Number(i.preco_unitario).toFixed(2) %></td>
+              <td>R$ <%= Number(i.subtotal).toFixed(2) %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="3" class="text-end fw-bold">Total:</td><td class="fw-bold text-success">R$ <%= Number(compra.valor_total).toFixed(2) %></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Detalhes</div>
+      <div class="card-body">
+        <p><strong>Fornecedor:</strong> <%= compra.fornecedor %></p>
+        <p><strong>Data:</strong> <%= new Date(compra.data_compra).toLocaleDateString('pt-BR') %></p>
+        <p><strong>Pagamento:</strong> <%= compra.forma_pagamento || '-' %></p>
+        <p><strong>Status:</strong> <span class="badge bg-<%= compra.status==='pago'?'success':compra.status==='cancelado'?'secondary':'warning' %> fs-6"><%= compra.status %></span></p>
+        <% if (compra.data_pagamento) { %><p><strong>Pago em:</strong> <%= new Date(compra.data_pagamento).toLocaleDateString('pt-BR') %></p><% } %>
+        <% if (compra.observacoes) { %><p><strong>Obs:</strong> <%= compra.observacoes %></p><% } %>
+        <hr>
+        <% if (compra.status === 'pendente') { %>
+        <form method="POST" action="/financeiro/compras/<%= compra.id %>/pagar" class="d-inline" onsubmit="return confirm('Confirmar pagamento? O estoque será atualizado automaticamente.')">
+          <button class="btn btn-success w-100 mb-2"><i class="bi bi-check-circle"></i> Confirmar Pagamento</button>
+        </form>
+        <form method="POST" action="/financeiro/compras/<%= compra.id %>/cancelar" class="d-inline" onsubmit="return confirm('Cancelar esta compra?')">
+          <button class="btn btn-outline-danger w-100"><i class="bi bi-x-circle"></i> Cancelar Compra</button>
+        </form>
+        <% } %>
+        <% if (compra.status === 'pago') { %>
+        <div class="alert alert-success py-2 mb-0"><i class="bi bi-check-circle"></i> Pago - estoque atualizado</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

@@ -10,23 +10,38 @@
 </head>
 <body>
 <% if (user) { %>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container-fluid">
     <a class="navbar-brand" href="/dashboard">
-      <i class="bi bi-phone"></i> Ferreira's Cell
+      <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="25" y="5" width="50" height="90" rx="10" stroke="#00e676" stroke-width="5" fill="none"/>
+        <rect x="35" y="15" width="30" height="55" rx="3" fill="#00e676" opacity="0.2"/>
+        <circle cx="50" cy="80" r="5" fill="#00e676"/>
+        <path d="M42 35 L50 28 L58 35" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="50" y1="28" x2="50" y2="50" stroke="#00e676" stroke-width="3" stroke-linecap="round"/>
+        <path d="M38 50 L50 42 L62 50" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+      </svg>
+      Ferreira's Cell
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="navMenu">
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="/ordens"><i class="bi bi-tools"></i> Ordens de Serviço</a></li>
+        <li class="nav-item"><a class="nav-link" href="/ordens"><i class="bi bi-tools"></i> Ordens</a></li>
         <li class="nav-item"><a class="nav-link" href="/clientes"><i class="bi bi-people"></i> Clientes</a></li>
         <li class="nav-item"><a class="nav-link" href="/estoque"><i class="bi bi-box-seam"></i> Estoque</a></li>
         <li class="nav-item"><a class="nav-link" href="/pdv"><i class="bi bi-cart3"></i> PDV</a></li>
         <li class="nav-item"><a class="nav-link" href="/caixa"><i class="bi bi-cash-stack"></i> Caixa</a></li>
-        <li class="nav-item"><a class="nav-link" href="/financeiro"><i class="bi bi-wallet2"></i> Financeiro</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-wallet2"></i> Financeiro</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/financeiro"><i class="bi bi-graph-up"></i> Visão Geral</a></li>
+            <li><a class="dropdown-item" href="/financeiro/contas"><i class="bi bi-receipt"></i> Contas</a></li>
+            <li><a class="dropdown-item" href="/financeiro/compras"><i class="bi bi-bag"></i> Compras</a></li>
+            <li><a class="dropdown-item" href="/financeiro/custos"><i class="bi bi-clipboard-data"></i> Custos Fixos</a></li>
+            <li><a class="dropdown-item" href="/financeiro/relatorios"><i class="bi bi-file-earmark-bar-graph"></i> Relatórios</a></li>
+          </ul>
+        </li>
         <% if (user.papel === 'admin') { %>
         <li class="nav-item"><a class="nav-link" href="/configuracoes"><i class="bi bi-gear"></i> Config</a></li>
         <% } %>

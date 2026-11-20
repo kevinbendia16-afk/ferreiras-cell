@@ -1,0 +1,52 @@
+<%- include('../partials/header', { pageTitle: 'Custos Fixos' }) %>
+<div class="page-header">
+  <h4><i class="bi bi-clipboard-data"></i> Custos Fixos Mensais</h4>
+  <span class="text-muted">Total ativo: <strong class="text-success">R$ <%= totalMensal.toFixed(2) %>/mês</strong></span>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Descrição</th><th>Valor</th><th>Dia Venc.</th><th>Categoria</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody>
+            <% custos.forEach(c => { %>
+            <tr class="<%= !c.ativo ? 'opacity-50' : '' %>">
+              <td><%= c.descricao %></td>
+              <td>R$ <%= Number(c.valor).toFixed(2) %></td>
+              <td>Dia <%= c.dia_vencimento %></td>
+              <td><%= c.categoria || '-' %></td>
+              <td><span class="badge bg-<%= c.ativo?'success':'secondary' %>"><%= c.ativo ? 'Ativo' : 'Inativo' %></span></td>
+              <td>
+                <form method="POST" action="/financeiro/custos/<%= c.id %>/toggle" class="d-inline">
+                  <button class="btn btn-sm btn-outline-<%= c.ativo?'warning':'success' %>" title="<%= c.ativo?'Desativar':'Ativar' %>"><i class="bi bi-<%= c.ativo?'pause':'play' %>"></i></button>
+                </form>
+                <form method="POST" action="/financeiro/custos/<%= c.id %>/excluir" class="d-inline" onsubmit="return confirm('Excluir custo fixo?')">
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            <% }) %>
+            <% if (!custos.length) { %><tr><td colspan="6" class="text-center text-muted py-3">Nenhum custo fixo cadastrado</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-plus text-success"></i> Novo Custo Fixo</div>
+      <div class="card-body">
+        <form method="POST" action="/financeiro/custos">
+          <div class="mb-2"><label class="form-label">Descrição *</label><input type="text" name="descricao" class="form-control" required placeholder="Ex: Aluguel, Internet"></div>
+          <div class="mb-2"><label class="form-label">Valor Mensal *</label><input type="number" name="valor" class="form-control" step="0.01" required></div>
+          <div class="mb-2"><label class="form-label">Dia de Vencimento</label><input type="number" name="dia_vencimento" class="form-control" value="1" min="1" max="31"></div>
+          <div class="mb-2"><label class="form-label">Categoria</label><input type="text" name="categoria" class="form-control" placeholder="Ex: Infraestrutura, Serviços"></div>
+          <button class="btn btn-success w-100"><i class="bi bi-plus"></i> Adicionar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

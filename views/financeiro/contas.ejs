@@ -1,0 +1,40 @@
+<%- include('../partials/header', { pageTitle: 'Contas' }) %>
+<div class="page-header">
+  <h4><i class="bi bi-receipt"></i> Contas a Pagar / Receber</h4>
+  <a href="/financeiro/contas/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova Conta</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-3">
+    <select name="tipo" class="form-select"><option value="">Todos</option><option value="pagar" <%= tipo==='pagar'?'selected':'' %>>A Pagar</option><option value="receber" <%= tipo==='receber'?'selected':'' %>>A Receber</option></select>
+  </div>
+  <div class="col-md-3">
+    <select name="status" class="form-select"><option value="">Todos status</option><option value="pendente" <%= status==='pendente'?'selected':'' %>>Pendente</option><option value="pago" <%= status==='pago'?'selected':'' %>>Pago</option><option value="atrasado" <%= status==='atrasado'?'selected':'' %>>Atrasado</option></select>
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        <% contas.forEach(c => { %>
+        <tr>
+          <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo %></span></td>
+          <td><%= c.descricao %> <% if(c.categoria){%><small class="text-muted">(<%= c.categoria %>)</small><%}%></td>
+          <td>R$ <%= Number(c.valor).toFixed(2) %></td>
+          <td><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
+          <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>"><%= c.status %></span></td>
+          <td>
+            <% if (c.status !== 'pago') { %>
+            <form method="POST" action="/financeiro/contas/<%= c.id %>/pagar" class="d-inline"><button class="btn btn-sm btn-outline-success" title="Pagar"><i class="bi bi-check"></i></button></form>
+            <% } %>
+            <a href="/financeiro/contas/<%= c.id %>/editar" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+          </td>
+        </tr>
+        <% }) %>
+        <% if (!contas.length) { %><tr><td colspan="6" class="text-center text-muted py-3">Nenhuma conta</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

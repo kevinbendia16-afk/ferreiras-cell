@@ -1,0 +1,93 @@
+<%- include('../partials/header', { pageTitle: 'Nova Compra' }) %>
+<h4><i class="bi bi-bag"></i> Nova Compra</h4>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+<form method="POST" action="/financeiro/compras" id="formCompra">
+  <div class="row g-3 mb-3">
+    <div class="col-md-4"><label class="form-label">Fornecedor *</label><input type="text" name="fornecedor" class="form-control" required placeholder="Nome do fornecedor"></div>
+    <div class="col-md-3"><label class="form-label">Data da Compra</label><input type="date" name="data_compra" class="form-control" value="<%= new Date().toISOString().slice(0,10) %>"></div>
+    <div class="col-md-3">
+      <label class="form-label">Forma Pagamento</label>
+      <select name="forma_pagamento" class="form-select">
+        <option value="">-</option>
+        <option value="Dinheiro">Dinheiro</option>
+        <option value="Pix">Pix</option>
+        <option value="Boleto">Boleto</option>
+        <option value="Cartão Crédito">Cartão Crédito</option>
+        <option value="Transferência">Transferência</option>
+      </select>
+    </div>
+    <div class="col-12"><label class="form-label">Observações</label><textarea name="observacoes" class="form-control" rows="2"></textarea></div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-box-seam text-success"></i> Itens da Compra</div>
+    <div class="card-body">
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-5">
+          <label class="form-label">Produto</label>
+          <select id="selProduto" class="form-select">
+            <option value="">Selecione...</option>
+            <% produtos.forEach(p => { %>
+            <option value="<%= p.id %>" data-nome="<%= p.nome %>" data-custo="<%= p.preco_custo %>"><%= p.nome %> - R$ <%= Number(p.preco_custo).toFixed(2) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2"><label class="form-label">Qtd</label><input type="number" id="qtdItem" class="form-control" value="1" min="1"></div>
+        <div class="col-md-2"><label class="form-label">Preço Unit.</label><input type="number" id="precoItem" class="form-control" step="0.01" value="0"></div>
+        <div class="col-auto"><button type="button" class="btn btn-success" id="btnAddItem"><i class="bi bi-plus"></i> Adicionar</button></div>
+      </div>
+      <table class="table table-sm">
+        <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th></th></tr></thead>
+        <tbody id="itensBody"></tbody>
+        <tfoot><tr><td colspan="3" class="text-end fw-bold">Total:</td><td colspan="2" class="fw-bold" id="totalCompra">R$ 0.00</td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <input type="hidden" name="itens" id="itensJson">
+  <button type="submit" class="btn btn-success"><i class="bi bi-check"></i> Salvar Compra</button>
+  <a href="/financeiro/compras" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<script>
+const itens = [];
+const selProduto = document.getElementById('selProduto');
+const qtdItem = document.getElementById('qtdItem');
+const precoItem = document.getElementById('precoItem');
+
+selProduto.addEventListener('change', function() {
+  const opt = this.options[this.selectedIndex];
+  if (opt.dataset.custo) precoItem.value = Number(opt.dataset.custo).toFixed(2);
+});
+
+document.getElementById('btnAddItem').addEventListener('click', function() {
+  const opt = selProduto.options[selProduto.selectedIndex];
+  if (!opt.value) return alert('Selecione um produto');
+  const q = Number(qtdItem.value), p = Number(precoItem.value);
+  if (q <= 0 || p <= 0) return alert('Qtd e preço devem ser maiores que zero');
+  itens.push({ produto_id: opt.value, nome: opt.dataset.nome, quantidade: q, preco_unitario: p });
+  renderItens();
+  selProduto.value = ''; qtdItem.value = 1; precoItem.value = 0;
+});
+
+function renderItens() {
+  const tbody = document.getElementById('itensBody');
+  tbody.innerHTML = '';
+  let total = 0;
+  itens.forEach((item, i) => {
+    const sub = item.quantidade * item.preco_unitario;
+    total += sub;
+    tbody.innerHTML += '<tr><td>'+item.nome+'</td><td>'+item.quantidade+'</td><td>R$ '+item.preco_unitario.toFixed(2)+'</td><td>R$ '+sub.toFixed(2)+'</td><td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem('+i+')"><i class="bi bi-trash"></i></button></td></tr>';
+  });
+  document.getElementById('totalCompra').textContent = 'R$ ' + total.toFixed(2);
+  document.getElementById('itensJson').value = JSON.stringify(itens);
+}
+
+function removeItem(i) { itens.splice(i, 1); renderItens(); }
+
+document.getElementById('formCompra').addEventListener('submit', function(e) {
+  if (!itens.length) { e.preventDefault(); alert('Adicione pelo menos um item'); }
+  document.getElementById('itensJson').value = JSON.stringify(itens);
+});
+</script>
+<%- include('../partials/footer') %>
