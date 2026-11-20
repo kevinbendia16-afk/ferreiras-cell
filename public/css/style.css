@@ -324,11 +324,12 @@ a:hover { color: var(--accent); opacity: 0.85; }
 
 .stat-card .stat-icon {
   font-size: 2rem;
-  opacity: 0.08;
+  opacity: 0.25;
   position: absolute;
   right: 16px; top: 16px;
+  color: var(--accent);
 }
-.stat-card:hover .stat-icon { opacity: 0.14; }
+.stat-card:hover .stat-icon { opacity: 0.4; }
 .stat-card .stat-value {
   font-size: 1.6rem;
   font-weight: 800;
