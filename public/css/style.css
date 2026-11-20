@@ -717,9 +717,9 @@ hr { border-color: var(--border); opacity: 0.3; }
   font-size: 1.2rem;
   margin-bottom: 0.8rem;
 }
-.fin-mini-card .fin-icon.warning { background: var(--warning-bg); color: var(--warning); }
-.fin-mini-card .fin-icon.info { background: var(--info-bg); color: var(--info); }
-.fin-mini-card .fin-icon.danger { background: var(--danger-bg); color: var(--danger); }
+.fin-mini-card .fin-icon.warning { background: var(--accent-muted); color: var(--accent); }
+.fin-mini-card .fin-icon.info { background: var(--accent-muted); color: var(--accent); }
+.fin-mini-card .fin-icon.danger { background: var(--accent-muted); color: var(--accent); }
 .fin-mini-card h3 {
   font-size: 1.4rem;
   font-weight: 800;
