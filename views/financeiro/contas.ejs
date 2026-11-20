@@ -3,38 +3,176 @@
   <h4><i class="bi bi-receipt"></i> Contas a Pagar / Receber</h4>
   <a href="/financeiro/contas/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova Conta</a>
 </div>
-<form class="row g-2 mb-3">
-  <div class="col-md-3">
-    <select name="tipo" class="form-select"><option value="">Todos</option><option value="pagar" <%= tipo==='pagar'?'selected':'' %>>A Pagar</option><option value="receber" <%= tipo==='receber'?'selected':'' %>>A Receber</option></select>
+
+<!-- Filtros -->
+<form class="row g-2 mb-3 align-items-end">
+  <div class="col-md-2">
+    <label class="form-label">Tipo</label>
+    <select name="tipo" class="form-select">
+      <option value="">Todos</option>
+      <option value="pagar" <%= tipo==='pagar'?'selected':'' %>>A Pagar</option>
+      <option value="receber" <%= tipo==='receber'?'selected':'' %>>A Receber</option>
+    </select>
   </div>
-  <div class="col-md-3">
-    <select name="status" class="form-select"><option value="">Todos status</option><option value="pendente" <%= status==='pendente'?'selected':'' %>>Pendente</option><option value="pago" <%= status==='pago'?'selected':'' %>>Pago</option><option value="atrasado" <%= status==='atrasado'?'selected':'' %>>Atrasado</option></select>
+  <div class="col-md-2">
+    <label class="form-label">Status</label>
+    <select name="status" class="form-select">
+      <option value="">Todos</option>
+      <option value="pendente" <%= status==='pendente'?'selected':'' %>>Pendente</option>
+      <option value="pago" <%= status==='pago'?'selected':'' %>>Pago</option>
+      <option value="atrasado" <%= status==='atrasado'?'selected':'' %>>Atrasado</option>
+    </select>
   </div>
-  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i> Filtrar</button></div>
+  <div class="col-auto"><button class="btn btn-outline-success"><i class="bi bi-funnel"></i> Filtrar</button></div>
 </form>
+
+<!-- Resumo rápido -->
+<% const totalPagar = contas.filter(c=>c.tipo==='pagar'&&c.status==='pendente').reduce((s,c)=>s+Number(c.valor),0); %>
+<% const totalReceber = contas.filter(c=>c.tipo==='receber'&&c.status==='pendente').reduce((s,c)=>s+Number(c.valor),0); %>
+<% const totalAtrasado = contas.filter(c=>c.status==='atrasado').reduce((s,c)=>s+Number(c.valor),0); %>
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="stat-card red" style="padding:1rem">
+      <div class="stat-value" style="font-size:1.2rem">R$ <%= totalPagar.toFixed(2) %></div>
+      <div class="stat-label">A Pagar (pendente)</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card green" style="padding:1rem">
+      <div class="stat-value" style="font-size:1.2rem">R$ <%= totalReceber.toFixed(2) %></div>
+      <div class="stat-label">A Receber (pendente)</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card orange" style="padding:1rem">
+      <div class="stat-value" style="font-size:1.2rem">R$ <%= totalAtrasado.toFixed(2) %></div>
+      <div class="stat-label">Atrasado</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th>Valor</th>
+          <th>Vencimento</th>
+          <th>Pagamento</th>
+          <th>Status</th>
+          <th style="width:160px">Ações</th>
+        </tr>
+      </thead>
       <tbody>
         <% contas.forEach(c => { %>
-        <tr>
-          <td><span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>"><%= c.tipo %></span></td>
-          <td><%= c.descricao %> <% if(c.categoria){%><small class="text-muted">(<%= c.categoria %>)</small><%}%></td>
-          <td>R$ <%= Number(c.valor).toFixed(2) %></td>
-          <td><%= c.data_vencimento ? new Date(c.data_vencimento).toLocaleDateString('pt-BR') : '-' %></td>
-          <td><span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>"><%= c.status %></span></td>
+        <% const vencido = c.data_vencimento && c.status==='pendente' && new Date(c.data_vencimento) < new Date(); %>
+        <tr class="<%= vencido ? 'table-danger' : '' %>">
           <td>
-            <% if (c.status !== 'pago') { %>
-            <form method="POST" action="/financeiro/contas/<%= c.id %>/pagar" class="d-inline"><button class="btn btn-sm btn-outline-success" title="Pagar"><i class="bi bi-check"></i></button></form>
-            <% } %>
-            <a href="/financeiro/contas/<%= c.id %>/editar" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+            <span class="badge bg-<%= c.tipo==='pagar'?'danger':'success' %>">
+              <%= c.tipo==='pagar' ? '↓ Pagar' : '↑ Receber' %>
+            </span>
+          </td>
+          <td><%= c.descricao %></td>
+          <td><small class="text-muted"><%= c.categoria || '-' %></small></td>
+          <td class="fw-semibold">R$ <%= Number(c.valor).toFixed(2) %></td>
+          <td>
+            <% if(c.data_vencimento) { %>
+              <span class="<%= vencido ? 'text-danger fw-bold' : '' %>">
+                <%= new Date(c.data_vencimento).toLocaleDateString('pt-BR') %>
+                <% if(vencido) { %> <i class="bi bi-exclamation-triangle-fill text-danger"></i><% } %>
+              </span>
+            <% } else { %>-<% } %>
+          </td>
+          <td>
+            <% if(c.data_pagamento) { %>
+              <small class="text-success"><%= new Date(c.data_pagamento).toLocaleDateString('pt-BR') %></small>
+            <% } else { %>-<% } %>
+          </td>
+          <td>
+            <span class="badge bg-<%= c.status==='pago'?'success':c.status==='atrasado'?'danger':'warning' %>">
+              <i class="bi bi-<%= c.status==='pago'?'check-circle':c.status==='atrasado'?'x-circle':'clock' %>"></i>
+              <%= c.status %>
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <% if (c.status !== 'pago') { %>
+              <!-- Dar baixa -->
+              <button class="btn btn-sm btn-success" onclick="abrirBaixa(<%= c.id %>, '<%= c.descricao.replace(/'/g, "\\'") %>', '<%= Number(c.valor).toFixed(2) %>')" title="Dar Baixa">
+                <i class="bi bi-check-lg"></i> Baixa
+              </button>
+              <% } else { %>
+              <!-- Estornar -->
+              <form method="POST" action="/financeiro/contas/<%= c.id %>/estornar" class="d-inline" onsubmit="return confirm('Estornar esta conta?')">
+                <button class="btn btn-sm btn-outline-warning" title="Estornar"><i class="bi bi-arrow-counterclockwise"></i></button>
+              </form>
+              <% } %>
+              <a href="/financeiro/contas/<%= c.id %>/editar" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="POST" action="/financeiro/contas/<%= c.id %>/excluir" class="d-inline" onsubmit="return confirm('Excluir esta conta?')">
+                <button class="btn btn-sm btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
           </td>
         </tr>
         <% }) %>
-        <% if (!contas.length) { %><tr><td colspan="6" class="text-center text-muted py-3">Nenhuma conta</td></tr><% } %>
+        <% if (!contas.length) { %>
+        <tr><td colspan="8" class="text-center text-muted py-4">
+          <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3"></i>
+          Nenhuma conta encontrada
+        </td></tr>
+        <% } %>
       </tbody>
     </table>
   </div>
 </div>
+
+<!-- Modal de Baixa -->
+<div class="modal fade" id="modalBaixa" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);">
+      <form method="POST" id="formBaixa">
+        <div class="modal-header" style="border-bottom:1px solid var(--border)">
+          <h5 class="modal-title"><i class="bi bi-check-circle text-success"></i> Dar Baixa</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p id="baixaDesc" class="mb-2"></p>
+          <p class="fw-bold fs-5 text-success mb-3">R$ <span id="baixaValor"></span></p>
+          <div class="mb-3">
+            <label class="form-label">Forma de Pagamento</label>
+            <select name="forma_pagamento" class="form-select" required>
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão Crédito">Cartão Crédito</option>
+              <option value="Cartão Débito">Cartão Débito</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Transferência">Transferência</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Data do Pagamento</label>
+            <input type="date" name="data_pagamento" class="form-control" value="<%= new Date().toISOString().slice(0,10) %>">
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid var(--border)">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Confirmar Baixa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirBaixa(id, desc, valor) {
+  document.getElementById('formBaixa').action = '/financeiro/contas/' + id + '/pagar';
+  document.getElementById('baixaDesc').textContent = desc;
+  document.getElementById('baixaValor').textContent = valor;
+  new bootstrap.Modal(document.getElementById('modalBaixa')).show();
+}
+</script>
 <%- include('../partials/footer') %>

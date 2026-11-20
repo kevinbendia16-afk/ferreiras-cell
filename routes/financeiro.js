@@ -72,7 +72,19 @@ router.post('/contas/:id', async (req, res) => {
 });
 
 router.post('/contas/:id/pagar', async (req, res) => {
-  await pool.query("UPDATE contas SET status='pago', data_pagamento=CURRENT_DATE WHERE id=$1", [req.params.id]);
+  const { forma_pagamento, data_pagamento } = req.body;
+  await pool.query("UPDATE contas SET status='pago', data_pagamento=$1, observacoes=COALESCE(observacoes,'')||$2 WHERE id=$3",
+    [data_pagamento || new Date().toISOString().slice(0,10), forma_pagamento ? '\nPago via: '+forma_pagamento : '', req.params.id]);
+  res.redirect('/financeiro/contas');
+});
+
+router.post('/contas/:id/estornar', async (req, res) => {
+  await pool.query("UPDATE contas SET status='pendente', data_pagamento=NULL WHERE id=$1", [req.params.id]);
+  res.redirect('/financeiro/contas');
+});
+
+router.post('/contas/:id/excluir', async (req, res) => {
+  await pool.query('DELETE FROM contas WHERE id=$1', [req.params.id]);
   res.redirect('/financeiro/contas');
 });
 
