@@ -33,6 +33,11 @@ router.post('/vender', async (req, res) => {
 
     await client.query('UPDATE vendas SET valor_total=$1 WHERE id=$2', [valorTotal, venda.id]);
 
+    await client.query(
+      "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Venda Balcão')",
+      [`Venda #${venda.id}`, valorTotal]
+    );
+
     const { rows: [caixaAberto] } = await client.query("SELECT id FROM caixa WHERE status='aberto' ORDER BY data_abertura DESC LIMIT 1");
     if (caixaAberto) {
       await client.query('INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',

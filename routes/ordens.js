@@ -67,6 +67,9 @@ router.get('/:id/editar', async (req, res) => {
 
 router.post('/:id', async (req, res) => {
   const { cliente_id, tecnico_id, aparelho_marca, aparelho_modelo, imei, defeito_relatado, diagnostico, solucao, status, valor_servico, forma_pagamento, data_previsao, observacoes } = req.body;
+
+  const { rows: [osAtual] } = await pool.query('SELECT * FROM ordens_servico WHERE id=$1', [req.params.id]);
+
   const updates = { cliente_id, tecnico_id: tecnico_id || null, aparelho_marca, aparelho_modelo, imei: imei || null, defeito_relatado, diagnostico: diagnostico || null, solucao: solucao || null, status, valor_servico: valor_servico || 0, forma_pagamento: forma_pagamento || null, data_previsao: data_previsao || null, observacoes: observacoes || null };
   if (status === 'pronto' || status === 'entregue') updates.data_conclusao = new Date();
   if (status === 'entregue') updates.data_entrega = new Date();
@@ -79,6 +82,24 @@ router.post('/:id', async (req, res) => {
   const vals = Object.values(updates);
   const setClause = cols.map((c, i) => `${c}=$${i + 1}`).join(',');
   await pool.query(`UPDATE ordens_servico SET ${setClause} WHERE id=$${cols.length + 1}`, [...vals, req.params.id]);
+
+  if (status === 'entregue' && osAtual && osAtual.status !== 'entregue') {
+    const totalOS = Number(updates.valor_total);
+    if (totalOS > 0) {
+      await pool.query(
+        "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Ordem de Serviço')",
+        [`OS ${osAtual.numero} - ${aparelho_marca} ${aparelho_modelo}`, totalOS]
+      );
+      const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
+      if (caixaAberto) {
+        await pool.query(
+          'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero}`, totalOS, forma_pagamento || 'Pix', 'os', req.params.id]
+        );
+      }
+    }
+  }
+
   res.redirect(`/ordens/${req.params.id}`);
 });
 

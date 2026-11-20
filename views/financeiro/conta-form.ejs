@@ -13,7 +13,28 @@
     <div class="col-md-5"><label class="form-label">Descrição *</label><input type="text" name="descricao" class="form-control" value="<%= conta ? conta.descricao : '' %>" required></div>
     <div class="col-md-2"><label class="form-label">Valor *</label><input type="number" name="valor" class="form-control" step="0.01" value="<%= conta ? conta.valor : '' %>" required></div>
     <div class="col-md-2"><label class="form-label">Vencimento</label><input type="date" name="data_vencimento" class="form-control" value="<%= conta && conta.data_vencimento ? new Date(conta.data_vencimento).toISOString().slice(0,10) : '' %>"></div>
-    <div class="col-md-3"><label class="form-label">Categoria</label><input type="text" name="categoria" class="form-control" value="<%= conta ? conta.categoria||'' : '' %>" placeholder="Ex: Aluguel, Fornecedor"></div>
+    <div class="col-md-3">
+      <label class="form-label">Categoria</label>
+      <select name="categoria" class="form-select" id="categoriaSelect">
+        <option value="">Selecione...</option>
+        <optgroup label="A Pagar" class="cat-pagar">
+          <option value="Aluguel" <%= conta && conta.categoria==='Aluguel'?'selected':'' %>>Aluguel</option>
+          <option value="Energia" <%= conta && conta.categoria==='Energia'?'selected':'' %>>Energia</option>
+          <option value="Água" <%= conta && conta.categoria==='Água'?'selected':'' %>>Água</option>
+          <option value="Internet" <%= conta && conta.categoria==='Internet'?'selected':'' %>>Internet</option>
+          <option value="Telefone" <%= conta && conta.categoria==='Telefone'?'selected':'' %>>Telefone</option>
+          <option value="Fornecedor" <%= conta && conta.categoria==='Fornecedor'?'selected':'' %>>Fornecedor</option>
+          <option value="Manutenção" <%= conta && conta.categoria==='Manutenção'?'selected':'' %>>Manutenção</option>
+          <option value="Impostos" <%= conta && conta.categoria==='Impostos'?'selected':'' %>>Impostos</option>
+          <option value="Salários" <%= conta && conta.categoria==='Salários'?'selected':'' %>>Salários</option>
+        </optgroup>
+        <optgroup label="A Receber" class="cat-receber">
+          <option value="Ordem de Serviço" <%= conta && conta.categoria==='Ordem de Serviço'?'selected':'' %>>Ordem de Serviço</option>
+          <option value="Venda Balcão" <%= conta && conta.categoria==='Venda Balcão'?'selected':'' %>>Venda Balcão</option>
+        </optgroup>
+        <option value="Outros" <%= conta && conta.categoria==='Outros'?'selected':'' %>>Outros</option>
+      </select>
+    </div>
     <% if (conta && conta.id) { %>
     <div class="col-md-3">
       <label class="form-label">Status</label>

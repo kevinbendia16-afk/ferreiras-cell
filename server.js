@@ -37,6 +37,7 @@ app.use('/estoque', authMiddleware, require('./routes/estoque'));
 app.use('/caixa', authMiddleware, require('./routes/caixa'));
 app.use('/financeiro', authMiddleware, require('./routes/financeiro'));
 app.use('/pdv', authMiddleware, require('./routes/pdv'));
+app.use('/vendas', authMiddleware, require('./routes/vendas'));
 app.use('/configuracoes', authMiddleware, require('./routes/configuracoes'));
 
 const PORT = process.env.PORT || 5000;
