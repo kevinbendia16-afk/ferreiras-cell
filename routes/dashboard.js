@@ -18,8 +18,17 @@ router.get('/', async (req, res) => {
       pool.query("SELECT COUNT(*) as total FROM ordens_servico WHERE status='entregue' AND criado_em::date BETWEEN $1 AND $2", [mesInicio, mesFim]),
       pool.query("SELECT COALESCE(AVG(valor_total),0) as media FROM ordens_servico WHERE status='entregue' AND valor_total > 0 AND criado_em::date BETWEEN $1 AND $2", [mesInicio, mesFim])
     ]);
-    const ultimasOS = await pool.query(`SELECT os.*, c.nome as cliente_nome FROM ordens_servico os
-      LEFT JOIN clientes c ON os.cliente_id=c.id ORDER BY os.criado_em DESC LIMIT 10`);
+    const [ultimasOS, osAtrasadas, osProntas] = await Promise.all([
+      pool.query(`SELECT os.*, c.nome as cliente_nome FROM ordens_servico os
+        LEFT JOIN clientes c ON os.cliente_id=c.id ORDER BY os.criado_em DESC LIMIT 10`),
+      pool.query(`SELECT os.numero, os.id, c.nome as cliente_nome, os.aparelho_marca, os.aparelho_modelo, os.data_previsao
+        FROM ordens_servico os LEFT JOIN clientes c ON os.cliente_id=c.id
+        WHERE os.status NOT IN ('entregue','cancelada') AND os.data_previsao < CURRENT_DATE
+        ORDER BY os.data_previsao LIMIT 5`),
+      pool.query(`SELECT os.numero, os.id, c.nome as cliente_nome, os.aparelho_marca, os.aparelho_modelo, c.telefone
+        FROM ordens_servico os LEFT JOIN clientes c ON os.cliente_id=c.id
+        WHERE os.status='pronto' ORDER BY os.atualizado_em DESC LIMIT 5`)
+    ]);
 
     res.render('dashboard/index', {
       stats: {
@@ -32,7 +41,9 @@ router.get('/', async (req, res) => {
         osEntregues: osEntreguesRes.rows[0].total,
         ticketMedio: ticketMedioRes.rows[0].media
       },
-      ultimasOS: ultimasOS.rows
+      ultimasOS: ultimasOS.rows,
+      osAtrasadas: osAtrasadas.rows,
+      osProntas: osProntas.rows
     });
   } catch (err) {
     console.error(err);

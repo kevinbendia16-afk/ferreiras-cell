@@ -77,6 +77,48 @@
   </div>
 </div>
 
+<% if (typeof osAtrasadas !== 'undefined' && osAtrasadas.length) { %>
+<div class="card mb-3" style="border-left:3px solid var(--danger, #dc3545)">
+  <div class="card-header py-2 d-flex align-items-center gap-2">
+    <i class="bi bi-exclamation-triangle-fill" style="color:var(--danger, #dc3545)"></i>
+    <strong style="font-size:0.9rem">OS Atrasadas</strong>
+    <span class="badge bg-danger ms-auto"><%= osAtrasadas.length %></span>
+  </div>
+  <div class="list-group list-group-flush">
+    <% osAtrasadas.forEach(o => { %>
+    <a href="/ordens/<%= o.id %>" class="list-group-item list-group-item-action py-2" style="background:var(--bg-card);border-color:var(--border)">
+      <strong class="text-success"><%= o.numero %></strong>
+      <span class="ms-2"><%= o.cliente_nome %></span>
+      <span class="text-muted ms-2"><%= o.aparelho_marca %> <%= o.aparelho_modelo %></span>
+      <small class="text-danger float-end">Prev: <%= new Date(o.data_previsao).toLocaleDateString('pt-BR') %></small>
+    </a>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
+<% if (typeof osProntas !== 'undefined' && osProntas.length) { %>
+<div class="card mb-3" style="border-left:3px solid var(--accent)">
+  <div class="card-header py-2 d-flex align-items-center gap-2">
+    <i class="bi bi-check-circle-fill" style="color:var(--accent)"></i>
+    <strong style="font-size:0.9rem">Prontas p/ Entrega</strong>
+    <span class="badge bg-success ms-auto"><%= osProntas.length %></span>
+  </div>
+  <div class="list-group list-group-flush">
+    <% osProntas.forEach(o => { %>
+    <a href="/ordens/<%= o.id %>" class="list-group-item list-group-item-action py-2" style="background:var(--bg-card);border-color:var(--border)">
+      <strong class="text-success"><%= o.numero %></strong>
+      <span class="ms-2"><%= o.cliente_nome %></span>
+      <span class="text-muted ms-2"><%= o.aparelho_marca %> <%= o.aparelho_modelo %></span>
+      <% if (o.telefone) { const n=o.telefone.replace(/\D/g,''); const w=n.length<=11?'55'+n:n; %>
+      <span class="float-end"><a href="https://wa.me/<%= w %>" target="_blank" style="color:#25d366"><i class="bi bi-whatsapp"></i> Avisar</a></span>
+      <% } %>
+    </a>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span><i class="bi bi-clock-history text-success me-2"></i>Últimas Ordens de Serviço</span>

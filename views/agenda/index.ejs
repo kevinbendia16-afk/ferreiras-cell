@@ -1,9 +1,4 @@
 <%- include('../partials/header', { pageTitle: 'Agenda' }) %>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4><i class="bi bi-calendar3"></i> Agenda de Servicos</h4>
-  <a href="/ordens/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova OS</a>
-</div>
-
 <%
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
@@ -11,18 +6,34 @@
 
   const statusMap = {
     aberta: { label: 'Aberta', color: 'warning', icon: 'folder2-open' },
-    aguardando_peca: { label: 'Aguardando Peca', color: 'info', icon: 'hourglass-split' },
+    aguardando_peca: { label: 'Ag. Peca', color: 'info', icon: 'hourglass-split' },
     em_reparo: { label: 'Em Reparo', color: 'primary', icon: 'wrench-adjustable' },
     pronto: { label: 'Pronto', color: 'success', icon: 'check-circle' }
   };
 
-  const atrasadas = [];
-  const hojeLista = [];
-  const amanhaLista = [];
-  const semanaLista = [];
-  const futuras = [];
-  const semData = [];
+  // Calendar data
+  const mesAtual = typeof mes !== 'undefined' ? Number(mes) : hoje.getMonth();
+  const anoAtual = typeof ano !== 'undefined' ? Number(ano) : hoje.getFullYear();
+  const primeiroDia = new Date(anoAtual, mesAtual, 1);
+  const ultimoDia = new Date(anoAtual, mesAtual + 1, 0);
+  const diasNoMes = ultimoDia.getDate();
+  const inicioSemana = primeiroDia.getDay(); // 0=dom
+  const meses = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+  // Map OS by date
+  const osPorDia = {};
+  ordens.forEach(o => {
+    if (!o.data_previsao) return;
+    const d = new Date(o.data_previsao);
+    if (d.getMonth() === mesAtual && d.getFullYear() === anoAtual) {
+      const dia = d.getDate();
+      if (!osPorDia[dia]) osPorDia[dia] = [];
+      osPorDia[dia].push(o);
+    }
+  });
+
+  // Priority lists
+  const atrasadas = [], hojeLista = [], amanhaLista = [], semanaLista = [], futuras = [], semData = [];
   ordens.forEach(o => {
     if (!o.data_previsao) { semData.push(o); return; }
     const d = new Date(o.data_previsao); d.setHours(0,0,0,0);
@@ -33,31 +44,131 @@
     else futuras.push(o);
   });
 
+  const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
+  const anoAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
+  const mesProximo = mesAtual === 11 ? 0 : mesAtual + 1;
+  const anoProximo = mesAtual === 11 ? anoAtual + 1 : anoAtual;
+%>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-calendar3"></i> Agenda de Servicos</h4>
+  <a href="/ordens/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova OS</a>
+</div>
+
+<!-- Resumo rápido -->
+<div class="row g-2 mb-3">
+  <div class="col-md-3">
+    <div class="card text-center" style="border-left:3px solid var(--danger, #dc3545)">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold" style="color:var(--danger, #dc3545)"><%= atrasadas.length %></div>
+        <small class="text-muted">Atrasadas</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center" style="border-left:3px solid var(--accent)">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold" style="color:var(--accent)"><%= hojeLista.length %></div>
+        <small class="text-muted">Hoje</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center" style="border-left:3px solid var(--info, #0dcaf0)">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold" style="color:var(--info, #0dcaf0)"><%= semanaLista.length + amanhaLista.length %></div>
+        <small class="text-muted">Esta Semana</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center" style="border-left:3px solid var(--text-muted)">
+      <div class="card-body py-2">
+        <div class="fs-4 fw-bold"><%= ordens.length %></div>
+        <small class="text-muted">Total Pendentes</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendário -->
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <a href="/agenda?mes=<%= mesAnterior %>&ano=<%= anoAnterior %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+    <strong><%= meses[mesAtual] %> <%= anoAtual %></strong>
+    <a href="/agenda?mes=<%= mesProximo %>&ano=<%= anoProximo %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+  </div>
+  <div class="card-body p-2">
+    <table class="table table-sm table-bordered mb-0" style="table-layout:fixed">
+      <thead>
+        <tr>
+          <% ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'].forEach(d => { %>
+          <th class="text-center text-muted" style="font-size:0.75rem;padding:4px"><%= d %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% let diaAtual = 1; const totalCells = Math.ceil((diasNoMes + inicioSemana) / 7) * 7; %>
+        <% for (let i = 0; i < totalCells; i++) { %>
+        <% if (i % 7 === 0) { %><tr><% } %>
+        <%
+          const eDia = i >= inicioSemana && diaAtual <= diasNoMes;
+          const dia = eDia ? diaAtual : 0;
+          const osNoDia = eDia ? (osPorDia[dia] || []) : [];
+          const eHoje = eDia && dia === hoje.getDate() && mesAtual === hoje.getMonth() && anoAtual === hoje.getFullYear();
+          const dataCheck = eDia ? new Date(anoAtual, mesAtual, dia) : null;
+          const ePassado = dataCheck && dataCheck < hoje;
+          if (eDia) diaAtual++;
+        %>
+        <td style="height:70px;vertical-align:top;padding:2px 4px;<%= eHoje ? 'background:rgba(0,230,118,0.08);border-color:var(--accent)' : '' %>">
+          <% if (eDia) { %>
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="<%= eHoje ? 'fw-bold' : 'text-muted' %>" style="<%= eHoje ? 'color:var(--accent)' : '' %>"><%= dia %></small>
+            <% if (osNoDia.length) { %><span class="badge bg-<%= ePassado && osNoDia.some(o => o.status !== 'pronto') ? 'danger' : 'success' %>" style="font-size:0.6rem"><%= osNoDia.length %></span><% } %>
+          </div>
+          <% osNoDia.slice(0, 2).forEach(o => { const st = statusMap[o.status] || statusMap.aberta; %>
+          <a href="/ordens/<%= o.id %>" class="d-block text-decoration-none" style="font-size:0.6rem;line-height:1.2;margin-top:1px;padding:1px 3px;border-radius:3px;background:var(--bg-input);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--text)">
+            <i class="bi bi-<%= st.icon %>" style="color:var(--accent);font-size:0.55rem"></i> <%= o.cliente_nome ? o.cliente_nome.split(' ')[0] : '' %>
+          </a>
+          <% }) %>
+          <% if (osNoDia.length > 2) { %><small class="text-muted" style="font-size:0.55rem">+<%= osNoDia.length - 2 %> mais</small><% } %>
+          <% } %>
+        </td>
+        <% if (i % 7 === 6) { %></tr><% } %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Lista por prioridade -->
+<h5 class="mb-3"><i class="bi bi-list-task"></i> Por Prioridade</h5>
+
+<%
   function renderGroup(title, icon, color, items) {
 %>
 <% if (items.length) { %>
 <div class="card mb-3">
-  <div class="card-header d-flex align-items-center gap-2">
-    <i class="bi bi-<%= icon %>" style="color:var(--<%= color === 'danger' ? 'accent' : color === 'warning' ? 'accent' : 'text' %>)"></i>
-    <strong><%= title %></strong>
+  <div class="card-header d-flex align-items-center gap-2 py-2">
+    <i class="bi bi-<%= icon %>"></i>
+    <strong style="font-size:0.9rem"><%= title %></strong>
     <span class="badge bg-<%= color %> ms-auto"><%= items.length %></span>
   </div>
   <div class="list-group list-group-flush">
     <% items.forEach(o => { const st = statusMap[o.status] || statusMap.aberta; %>
-    <a href="/ordens/<%= o.id %>" class="list-group-item list-group-item-action" style="background:var(--bg-card);border-color:var(--border)">
+    <a href="/ordens/<%= o.id %>" class="list-group-item list-group-item-action py-2" style="background:var(--bg-card);border-color:var(--border)">
       <div class="d-flex justify-content-between align-items-center">
         <div>
-          <strong class="text-success"><%= o.numero %></strong>
-          <span class="ms-2"><%= o.cliente_nome %></span>
-          <span class="text-muted ms-2"><%= o.aparelho_marca %> <%= o.aparelho_modelo %></span>
+          <strong class="text-success" style="font-size:0.85rem"><%= o.numero %></strong>
+          <span class="ms-2" style="font-size:0.85rem"><%= o.cliente_nome %></span>
+          <span class="text-muted ms-2" style="font-size:0.8rem"><%= o.aparelho_marca %> <%= o.aparelho_modelo %></span>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-<%= st.color %>"><i class="bi bi-<%= st.icon %>"></i> <%= st.label %></span>
-          <% if (o.data_previsao) { %><small class="text-muted"><%= new Date(o.data_previsao).toLocaleDateString('pt-BR') %></small><% } %>
-          <% if (o.tecnico_nome) { %><small class="text-muted"><i class="bi bi-person"></i> <%= o.tecnico_nome %></small><% } %>
+          <span class="badge bg-<%= st.color %>" style="font-size:0.7rem"><i class="bi bi-<%= st.icon %>"></i> <%= st.label %></span>
+          <% if (o.data_previsao) { %><small class="text-muted" style="font-size:0.75rem"><%= new Date(o.data_previsao).toLocaleDateString('pt-BR') %></small><% } %>
+          <% if (o.tecnico_nome) { %><small class="text-muted" style="font-size:0.75rem"><i class="bi bi-person"></i> <%= o.tecnico_nome %></small><% } %>
         </div>
       </div>
-      <% if (o.defeito_relatado) { %><small class="text-muted d-block mt-1"><%= o.defeito_relatado.substring(0, 80) %><%= o.defeito_relatado.length > 80 ? '...' : '' %></small><% } %>
     </a>
     <% }) %>
   </div>
