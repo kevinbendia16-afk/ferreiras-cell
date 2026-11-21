@@ -27,6 +27,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 const authMiddleware = require('./middlewares/auth');
 
 app.use('/', require('./routes/auth'));
