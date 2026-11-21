@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
         ORDER BY os.data_previsao LIMIT 5`),
       pool.query(`SELECT os.numero, os.id, c.nome as cliente_nome, os.aparelho_marca, os.aparelho_modelo, c.telefone
         FROM ordens_servico os LEFT JOIN clientes c ON os.cliente_id=c.id
-        WHERE os.status='pronto' ORDER BY os.atualizado_em DESC LIMIT 5`)
+        WHERE os.status='pronto' ORDER BY os.criado_em DESC LIMIT 5`)
     ]);
 
     res.render('dashboard/index', {
@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.render('dashboard/index', { stats: {}, ultimasOS: [] });
+    res.render('dashboard/index', { stats: {}, ultimasOS: [], osAtrasadas: [], osProntas: [] });
   }
 });
 

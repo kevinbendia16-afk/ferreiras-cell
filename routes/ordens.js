@@ -41,6 +41,20 @@ router.post('/', async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
       [numero, cliente_id, tecnico_id || null, aparelho_marca, aparelho_modelo, imei || null, defeito_relatado, data_previsao || null, observacoes || null, servico, sinal, servico]
     );
+    // Sinal → caixa
+    if (sinal > 0) {
+      const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
+      if (caixaAberto) {
+        await pool.query(
+          'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+          [caixaAberto.id, 'entrada', 'Sinal OS', `Sinal OS ${numero}`, sinal, 'Pix', 'os', rows[0].id]
+        );
+      }
+      await pool.query(
+        "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Sinal OS')",
+        [`Sinal OS ${numero}`, sinal]
+      );
+    }
     res.redirect(`/ordens/${rows[0].id}`);
   } catch (err) {
     console.error(err);
@@ -87,16 +101,18 @@ router.post('/:id', async (req, res) => {
 
   if (status === 'entregue' && osAtual && osAtual.status !== 'entregue') {
     const totalOS = Number(updates.valor_total);
-    if (totalOS > 0) {
+    const sinalPago = Number(updates.valor_sinal || 0);
+    const restante = totalOS - sinalPago;
+    if (restante > 0) {
       await pool.query(
         "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Ordem de Serviço')",
-        [`OS ${osAtual.numero} - ${aparelho_marca} ${aparelho_modelo}`, totalOS]
+        [`OS ${osAtual.numero} - ${aparelho_marca} ${aparelho_modelo}`, restante]
       );
       const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
       if (caixaAberto) {
         await pool.query(
           'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero}`, totalOS, forma_pagamento || 'Pix', 'os', req.params.id]
+          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero} (restante)`, restante, forma_pagamento || 'Pix', 'os', req.params.id]
         );
       }
     }
@@ -124,16 +140,18 @@ router.post('/:id/status', async (req, res) => {
 
   if (status === 'entregue' && osAtual.status !== 'entregue') {
     const totalOS = Number(osAtual.valor_total || 0);
-    if (totalOS > 0) {
+    const sinalPago = Number(osAtual.valor_sinal || 0);
+    const restante = totalOS - sinalPago;
+    if (restante > 0) {
       await pool.query(
         "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Ordem de Serviço')",
-        [`OS ${osAtual.numero} - ${osAtual.aparelho_marca} ${osAtual.aparelho_modelo}`, totalOS]
+        [`OS ${osAtual.numero} - ${osAtual.aparelho_marca} ${osAtual.aparelho_modelo}`, restante]
       );
       const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
       if (caixaAberto) {
         await pool.query(
           'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero}`, totalOS, osAtual.forma_pagamento || 'Pix', 'os', req.params.id]
+          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero} (restante)`, restante, osAtual.forma_pagamento || 'Pix', 'os', req.params.id]
         );
       }
     }

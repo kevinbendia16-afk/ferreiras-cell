@@ -73,8 +73,20 @@ router.post('/contas/:id', async (req, res) => {
 
 router.post('/contas/:id/pagar', async (req, res) => {
   const { forma_pagamento, data_pagamento } = req.body;
+  const { rows: [conta] } = await pool.query('SELECT * FROM contas WHERE id=$1', [req.params.id]);
+  if (!conta || conta.status === 'pago') return res.redirect('/financeiro/contas');
+
   await pool.query("UPDATE contas SET status='pago', data_pagamento=$1, observacoes=COALESCE(observacoes,'')||$2 WHERE id=$3",
     [data_pagamento || new Date().toISOString().slice(0,10), forma_pagamento ? '\nPago via: '+forma_pagamento : '', req.params.id]);
+
+  const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
+  if (caixaAberto) {
+    const tipoCaixa = conta.tipo === 'receber' ? 'entrada' : 'saida';
+    await pool.query(
+      'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      [caixaAberto.id, tipoCaixa, conta.categoria || 'Conta', conta.descricao, conta.valor, forma_pagamento || 'Pix', 'conta', conta.id]
+    );
+  }
   res.redirect('/financeiro/contas');
 });
 
@@ -148,11 +160,28 @@ router.post('/compras/:id/pagar', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const { rows: [compra] } = await client.query('SELECT * FROM compras WHERE id=$1', [req.params.id]);
+    if (!compra || compra.status === 'pago') { client.release(); return res.redirect('/financeiro/compras/' + req.params.id); }
+
     await client.query("UPDATE compras SET status='pago', data_pagamento=CURRENT_DATE WHERE id=$1", [req.params.id]);
     const { rows: itens } = await client.query('SELECT produto_id, quantidade FROM compra_itens WHERE compra_id=$1', [req.params.id]);
     for (const item of itens) {
       await client.query('UPDATE produtos SET estoque_atual = estoque_atual + $1 WHERE id=$2', [item.quantidade, item.produto_id]);
     }
+
+    await client.query(
+      "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('pagar',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Compra Estoque')",
+      [`Compra #${compra.id} - ${compra.fornecedor || 'Fornecedor'}`, compra.valor_total]
+    );
+
+    const { rows: [caixaAberto] } = await client.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
+    if (caixaAberto) {
+      await client.query(
+        'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [caixaAberto.id, 'saida', 'Compra Estoque', `Compra #${compra.id}`, compra.valor_total, compra.forma_pagamento || 'Pix', 'compra', compra.id]
+      );
+    }
+
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK');
