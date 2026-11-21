@@ -1,0 +1,78 @@
+<%- include('../partials/header', { pageTitle: 'Agenda' }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-calendar3"></i> Agenda de Servicos</h4>
+  <a href="/ordens/nova" class="btn btn-success"><i class="bi bi-plus"></i> Nova OS</a>
+</div>
+
+<%
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
+  const semana = new Date(hoje); semana.setDate(semana.getDate()+7);
+
+  const statusMap = {
+    aberta: { label: 'Aberta', color: 'warning', icon: 'folder2-open' },
+    aguardando_peca: { label: 'Aguardando Peca', color: 'info', icon: 'hourglass-split' },
+    em_reparo: { label: 'Em Reparo', color: 'primary', icon: 'wrench-adjustable' },
+    pronto: { label: 'Pronto', color: 'success', icon: 'check-circle' }
+  };
+
+  const atrasadas = [];
+  const hojeLista = [];
+  const amanhaLista = [];
+  const semanaLista = [];
+  const futuras = [];
+  const semData = [];
+
+  ordens.forEach(o => {
+    if (!o.data_previsao) { semData.push(o); return; }
+    const d = new Date(o.data_previsao); d.setHours(0,0,0,0);
+    if (d < hoje) atrasadas.push(o);
+    else if (d.getTime() === hoje.getTime()) hojeLista.push(o);
+    else if (d.getTime() === amanha.getTime()) amanhaLista.push(o);
+    else if (d <= semana) semanaLista.push(o);
+    else futuras.push(o);
+  });
+
+  function renderGroup(title, icon, color, items) {
+%>
+<% if (items.length) { %>
+<div class="card mb-3">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-<%= icon %>" style="color:var(--<%= color === 'danger' ? 'accent' : color === 'warning' ? 'accent' : 'text' %>)"></i>
+    <strong><%= title %></strong>
+    <span class="badge bg-<%= color %> ms-auto"><%= items.length %></span>
+  </div>
+  <div class="list-group list-group-flush">
+    <% items.forEach(o => { const st = statusMap[o.status] || statusMap.aberta; %>
+    <a href="/ordens/<%= o.id %>" class="list-group-item list-group-item-action" style="background:var(--bg-card);border-color:var(--border)">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <strong class="text-success"><%= o.numero %></strong>
+          <span class="ms-2"><%= o.cliente_nome %></span>
+          <span class="text-muted ms-2"><%= o.aparelho_marca %> <%= o.aparelho_modelo %></span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-<%= st.color %>"><i class="bi bi-<%= st.icon %>"></i> <%= st.label %></span>
+          <% if (o.data_previsao) { %><small class="text-muted"><%= new Date(o.data_previsao).toLocaleDateString('pt-BR') %></small><% } %>
+          <% if (o.tecnico_nome) { %><small class="text-muted"><i class="bi bi-person"></i> <%= o.tecnico_nome %></small><% } %>
+        </div>
+      </div>
+      <% if (o.defeito_relatado) { %><small class="text-muted d-block mt-1"><%= o.defeito_relatado.substring(0, 80) %><%= o.defeito_relatado.length > 80 ? '...' : '' %></small><% } %>
+    </a>
+    <% }) %>
+  </div>
+</div>
+<% } %>
+<% } %>
+
+<% renderGroup('Atrasadas', 'exclamation-triangle-fill', 'danger', atrasadas) %>
+<% renderGroup('Hoje', 'calendar-check', 'warning', hojeLista) %>
+<% renderGroup('Amanha', 'calendar-event', 'info', amanhaLista) %>
+<% renderGroup('Esta Semana', 'calendar-week', 'primary', semanaLista) %>
+<% renderGroup('Proximas', 'calendar3', 'secondary', futuras) %>
+<% renderGroup('Sem Previsao', 'question-circle', 'secondary', semData) %>
+
+<% if (!ordens.length) { %>
+<div class="card"><div class="card-body text-center text-muted py-5"><i class="bi bi-calendar-check" style="font-size:3rem;opacity:0.3"></i><p class="mt-2">Nenhuma OS pendente</p></div></div>
+<% } %>
+<%- include('../partials/footer') %>

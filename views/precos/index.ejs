@@ -1,0 +1,31 @@
+<%- include('../partials/header', { pageTitle: 'Tabela de Precos' }) %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4><i class="bi bi-tags"></i> Tabela de Precos</h4>
+</div>
+<form class="mb-3">
+  <div class="input-group">
+    <input type="text" name="busca" class="form-control" placeholder="Buscar produto ou categoria..." value="<%= busca %>" autofocus>
+    <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+  </div>
+</form>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Produto</th><th>Categoria</th><th>Custo</th><th>Preco Venda</th><th>Margem</th><th>Estoque</th></tr></thead>
+      <tbody>
+        <% produtos.forEach(p => { const custo = Number(p.preco_custo||0); const venda = Number(p.preco_venda||0); const margem = venda > 0 && custo > 0 ? ((venda-custo)/custo*100).toFixed(0) : '-'; %>
+        <tr>
+          <td class="fw-semibold"><%= p.nome %></td>
+          <td class="text-muted"><%= p.categoria || '-' %></td>
+          <td class="text-muted">R$ <%= custo.toFixed(2) %></td>
+          <td class="fw-semibold text-success">R$ <%= venda.toFixed(2) %></td>
+          <td><% if (margem !== '-') { %><span class="badge bg-<%= Number(margem) >= 30 ? 'success' : Number(margem) >= 10 ? 'warning' : 'danger' %>"><%= margem %>%</span><% } else { %>-<% } %></td>
+          <td><span class="badge bg-<%= p.estoque_atual > 0 ? 'success' : 'danger' %>"><%= p.estoque_atual %></span></td>
+        </tr>
+        <% }) %>
+        <% if (!produtos.length) { %><tr><td colspan="6" class="text-muted text-center py-4">Nenhum produto encontrado</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/footer') %>

@@ -39,6 +39,8 @@ app.use('/financeiro', authMiddleware, require('./routes/financeiro'));
 app.use('/pdv', authMiddleware, require('./routes/pdv'));
 app.use('/vendas', authMiddleware, require('./routes/vendas'));
 app.use('/configuracoes', authMiddleware, require('./routes/configuracoes'));
+app.use('/precos', authMiddleware, require('./routes/precos'));
+app.use('/agenda', authMiddleware, require('./routes/agenda'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Ferreira's Cell rodando na porta ${PORT}`));

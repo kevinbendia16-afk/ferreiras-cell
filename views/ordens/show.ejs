@@ -1,9 +1,87 @@
 <%- include('../partials/header', { pageTitle: 'OS ' + os.numero }) %>
+<%
+  const statusMap = {
+    aberta: { label: 'Aberta', color: 'warning', icon: 'folder2-open' },
+    aguardando_peca: { label: 'Aguardando Peca', color: 'info', icon: 'hourglass-split' },
+    em_reparo: { label: 'Em Reparo', color: 'primary', icon: 'wrench-adjustable' },
+    pronto: { label: 'Pronto', color: 'success', icon: 'check-circle' },
+    entregue: { label: 'Entregue', color: 'success', icon: 'bag-check' },
+    cancelada: { label: 'Cancelada', color: 'danger', icon: 'x-circle' }
+  };
+  const st = statusMap[os.status] || statusMap.aberta;
+  const statusOrder = ['aberta','aguardando_peca','em_reparo','pronto','entregue'];
+  const currentIdx = statusOrder.indexOf(os.status);
+
+  const custoPecas = Number(os.custo_pecas || 0);
+  const vendaPecas = Number(os.valor_pecas || 0);
+  const maoDeObra = Number(os.valor_servico || 0);
+  const valorTotal = Number(os.valor_total || 0);
+  const sinal = Number(os.valor_sinal || 0);
+  const restante = valorTotal - sinal;
+  const lucroPecas = vendaPecas - custoPecas;
+  const lucroTotal = lucroPecas + maoDeObra;
+%>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4><i class="bi bi-tools"></i> OS <%= os.numero %></h4>
-  <div>
+  <div class="d-flex gap-2">
+    <% if (os.cliente_telefone) { %>
+    <% const num = os.cliente_telefone.replace(/\D/g,''); const wn = num.length <= 11 ? '55'+num : num; %>
+    <a href="https://wa.me/<%= wn %>" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-whatsapp"></i></a>
+    <% } %>
     <a href="/ordens/<%= os.id %>/editar" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
     <a href="/ordens" class="btn btn-outline-secondary btn-sm">Voltar</a>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <span class="badge bg-<%= st.color %> fs-6"><i class="bi bi-<%= st.icon %>"></i> <%= st.label %></span>
+        <span class="text-muted ms-2">Tecnico: <strong><%= os.tecnico_nome || 'Nao atribuido' %></strong></span>
+      </div>
+      <% if (!['entregue','cancelada'].includes(os.status)) { %>
+      <div class="d-flex gap-1 flex-wrap">
+        <% const nextStatuses = statusOrder.filter((s, i) => i > currentIdx && s !== 'entregue'); %>
+        <% nextStatuses.forEach(ns => { const nst = statusMap[ns]; %>
+        <form method="POST" action="/ordens/<%= os.id %>/status" class="d-inline">
+          <input type="hidden" name="status" value="<%= ns %>">
+          <button class="btn btn-sm btn-outline-<%= nst.color %>"><i class="bi bi-<%= nst.icon %>"></i> <%= nst.label %></button>
+        </form>
+        <% }) %>
+        <% if (os.status === 'pronto') { %>
+        <form method="POST" action="/ordens/<%= os.id %>/status" class="d-inline">
+          <input type="hidden" name="status" value="entregue">
+          <button class="btn btn-sm btn-success"><i class="bi bi-bag-check"></i> Entregar</button>
+        </form>
+        <% } %>
+        <form method="POST" action="/ordens/<%= os.id %>/status" class="d-inline" onsubmit="return confirm('Cancelar esta OS?')">
+          <input type="hidden" name="status" value="cancelada">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex justify-content-between">
+      <% statusOrder.forEach((s, i) => { %>
+      <div class="text-center flex-fill">
+        <div style="width:28px;height:28px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;
+          background:<%= i <= currentIdx ? 'var(--accent)' : 'var(--border)' %>;
+          color:<%= i <= currentIdx ? '#fff' : 'var(--text-muted)' %>">
+          <i class="bi bi-<%= statusMap[s].icon %>"></i>
+        </div>
+        <small class="<%= i <= currentIdx ? '' : 'text-muted' %>" style="font-size:0.65rem"><%= statusMap[s].label %></small>
+      </div>
+      <% }) %>
+    </div>
   </div>
 </div>
 
@@ -12,70 +90,96 @@
     <div class="card">
       <div class="card-header">Dados do Aparelho</div>
       <div class="card-body">
-        <div class="row">
-          <div class="col-md-4"><strong>Cliente:</strong> <a href="/clientes/<%= os.cliente_id %>"><%= os.cliente_nome %></a></div>
-          <div class="col-md-3"><strong>Telefone:</strong> <%= os.cliente_telefone || '-' %></div>
-          <div class="col-md-3"><strong>Aparelho:</strong> <%= os.aparelho_marca %> <%= os.aparelho_modelo %></div>
-          <div class="col-md-2"><strong>IMEI:</strong> <%= os.imei || '-' %></div>
+        <div class="row g-2">
+          <div class="col-md-4"><small class="text-muted d-block">Cliente</small><a href="/clientes/<%= os.cliente_id %>"><%= os.cliente_nome %></a></div>
+          <div class="col-md-3"><small class="text-muted d-block">Telefone</small>
+            <% if (os.cliente_telefone) { %>
+              <%= os.cliente_telefone %>
+              <% const n3 = os.cliente_telefone.replace(/\D/g,''); const w3 = n3.length <= 11 ? '55'+n3 : n3; %>
+              <a href="https://wa.me/<%= w3 %>" target="_blank" style="color:#25d366"><i class="bi bi-whatsapp"></i></a>
+            <% } else { %>-<% } %>
+          </div>
+          <div class="col-md-3"><small class="text-muted d-block">Aparelho</small><%= os.aparelho_marca %> <%= os.aparelho_modelo %></div>
+          <div class="col-md-2"><small class="text-muted d-block">IMEI</small><%= os.imei || '-' %></div>
         </div>
         <hr>
         <p><strong>Defeito:</strong> <%= os.defeito_relatado %></p>
-        <% if (os.diagnostico) { %><p><strong>Diagnóstico:</strong> <%= os.diagnostico %></p><% } %>
-        <% if (os.solucao) { %><p><strong>Solução:</strong> <%= os.solucao %></p><% } %>
+        <% if (os.diagnostico) { %><p><strong>Diagnostico:</strong> <%= os.diagnostico %></p><% } %>
+        <% if (os.solucao) { %><p><strong>Solucao:</strong> <%= os.solucao %></p><% } %>
         <% if (os.observacoes) { %><p><strong>Obs:</strong> <%= os.observacoes %></p><% } %>
       </div>
     </div>
   </div>
+
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">Resumo</div>
+    <div class="card mb-3">
+      <div class="card-header">Financeiro</div>
       <div class="card-body">
-        <p><strong>Status:</strong> <span class="badge bg-<%= os.status==='entregue'?'success':os.status==='cancelada'?'danger':os.status==='pronto'?'info':'warning' %> fs-6"><%= os.status %></span></p>
-        <p><strong>Técnico:</strong> <%= os.tecnico_nome || 'Não atribuído' %></p>
-        <p><strong>Entrada:</strong> <%= new Date(os.data_entrada).toLocaleDateString('pt-BR') %></p>
-        <% if (os.data_previsao) { %><p><strong>Previsão:</strong> <%= new Date(os.data_previsao).toLocaleDateString('pt-BR') %></p><% } %>
-        <% if (os.data_conclusao) { %><p><strong>Conclusão:</strong> <%= new Date(os.data_conclusao).toLocaleDateString('pt-BR') %></p><% } %>
-        <hr>
-        <p>Serviço: <strong>R$ <%= Number(os.valor_servico||0).toFixed(2) %></strong></p>
-        <p>Peças: <strong>R$ <%= Number(os.valor_pecas||0).toFixed(2) %></strong></p>
-        <h5 class="text-success">Total: R$ <%= Number(os.valor_total||0).toFixed(2) %></h5>
-        <% if (os.forma_pagamento) { %><p><strong>Pagamento:</strong> <%= os.forma_pagamento %></p><% } %>
+        <div class="d-flex justify-content-between mb-1"><span>Mao de obra:</span><strong>R$ <%= maoDeObra.toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between mb-1"><span>Pecas (venda):</span><strong>R$ <%= vendaPecas.toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between mb-1 text-muted"><span>Pecas (custo):</span><small>R$ <%= custoPecas.toFixed(2) %></small></div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between mb-1 fs-5"><span>Total:</span><strong class="text-success">R$ <%= valorTotal.toFixed(2) %></strong></div>
+        <% if (sinal > 0) { %>
+        <div class="d-flex justify-content-between mb-1"><span>Sinal pago:</span><span class="text-success">- R$ <%= sinal.toFixed(2) %></span></div>
+        <div class="d-flex justify-content-between mb-1"><span>Restante:</span><strong class="text-warning">R$ <%= restante.toFixed(2) %></strong></div>
+        <% } %>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between mb-1"><span>Lucro pecas:</span><strong class="<%= lucroPecas >= 0 ? 'text-success' : 'text-danger' %>">R$ <%= lucroPecas.toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between mb-1"><span>Lucro mao de obra:</span><strong class="text-success">R$ <%= maoDeObra.toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between"><span>Lucro total:</span><strong class="<%= lucroTotal >= 0 ? 'text-success' : 'text-danger' %> fs-5">R$ <%= lucroTotal.toFixed(2) %></strong></div>
+        <% if (os.forma_pagamento) { %><div class="mt-2"><small class="text-muted">Pagamento: <%= os.forma_pagamento %></small></div><% } %>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Datas</div>
+      <div class="card-body">
+        <div class="mb-1"><small class="text-muted">Entrada:</small> <%= new Date(os.data_entrada).toLocaleDateString('pt-BR') %></div>
+        <% if (os.data_previsao) { %><div class="mb-1"><small class="text-muted">Previsao:</small> <%= new Date(os.data_previsao).toLocaleDateString('pt-BR') %></div><% } %>
+        <% if (os.data_conclusao) { %><div class="mb-1"><small class="text-muted">Conclusao:</small> <%= new Date(os.data_conclusao).toLocaleDateString('pt-BR') %></div><% } %>
+        <% if (os.data_entrega) { %><div class="mb-1"><small class="text-muted">Entrega:</small> <%= new Date(os.data_entrega).toLocaleDateString('pt-BR') %></div><% } %>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Pecas -->
 <div class="card mb-4">
-  <div class="card-header">Peças Utilizadas</div>
+  <div class="card-header">Pecas Utilizadas</div>
   <div class="card-body">
     <table class="table table-sm mb-3">
-      <thead><tr><th>Peça</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th></th></tr></thead>
+      <thead><tr><th>Peca</th><th>Qtd</th><th>Custo Unit.</th><th>Venda Unit.</th><th>Subtotal</th><th>Lucro</th><th></th></tr></thead>
       <tbody>
-        <% pecas.forEach(p => { %>
+        <% pecas.forEach(p => { const lucP = (Number(p.preco_unitario) - Number(p.preco_custo||0)) * Number(p.quantidade); %>
         <tr>
           <td><%= p.produto_nome %></td>
           <td><%= p.quantidade %></td>
+          <td class="text-muted">R$ <%= Number(p.preco_custo||0).toFixed(2) %></td>
           <td>R$ <%= Number(p.preco_unitario).toFixed(2) %></td>
-          <td>R$ <%= Number(p.subtotal).toFixed(2) %></td>
+          <td class="fw-semibold">R$ <%= Number(p.subtotal).toFixed(2) %></td>
+          <td class="<%= lucP >= 0 ? 'text-success' : 'text-danger' %>">R$ <%= lucP.toFixed(2) %></td>
           <td>
-            <form method="POST" action="/ordens/<%= os.id %>/pecas/<%= p.id %>/remover" style="display:inline" onsubmit="return confirm('Remover peça?')">
+            <% if (!['entregue','cancelada'].includes(os.status)) { %>
+            <form method="POST" action="/ordens/<%= os.id %>/pecas/<%= p.id %>/remover" style="display:inline" onsubmit="return confirm('Remover peca?')">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
             </form>
+            <% } %>
           </td>
         </tr>
         <% }) %>
-        <% if (!pecas.length) { %><tr><td colspan="5" class="text-muted">Nenhuma peça adicionada</td></tr><% } %>
+        <% if (!pecas.length) { %><tr><td colspan="7" class="text-muted text-center">Nenhuma peca adicionada</td></tr><% } %>
       </tbody>
     </table>
 
     <% if (!['entregue','cancelada'].includes(os.status)) { %>
     <form method="POST" action="/ordens/<%= os.id %>/pecas" class="row g-2 align-items-end">
       <div class="col-md-5">
-        <label class="form-label">Adicionar Peça</label>
+        <label class="form-label">Adicionar Peca</label>
         <select name="produto_id" class="form-select" required>
           <option value="">Selecione...</option>
           <% produtos.forEach(p => { %>
-          <option value="<%= p.id %>"><%= p.nome %> (estoque: <%= p.estoque_atual %>) - R$ <%= Number(p.preco_venda).toFixed(2) %></option>
+          <option value="<%= p.id %>"><%= p.nome %> (est: <%= p.estoque_atual %>) - R$ <%= Number(p.preco_venda).toFixed(2) %></option>
           <% }) %>
         </select>
       </div>

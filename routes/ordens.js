@@ -31,13 +31,15 @@ router.get('/nova', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { cliente_id, tecnico_id, aparelho_marca, aparelho_modelo, imei, defeito_relatado, data_previsao, observacoes } = req.body;
+  const { cliente_id, tecnico_id, aparelho_marca, aparelho_modelo, imei, defeito_relatado, data_previsao, observacoes, valor_servico, valor_sinal } = req.body;
   try {
     const numero = await gerarNumeroOS();
+    const servico = Number(valor_servico || 0);
+    const sinal = Number(valor_sinal || 0);
     const { rows } = await pool.query(
-      `INSERT INTO ordens_servico (numero,cliente_id,tecnico_id,aparelho_marca,aparelho_modelo,imei,defeito_relatado,data_previsao,observacoes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-      [numero, cliente_id, tecnico_id || null, aparelho_marca, aparelho_modelo, imei || null, defeito_relatado, data_previsao || null, observacoes || null]
+      `INSERT INTO ordens_servico (numero,cliente_id,tecnico_id,aparelho_marca,aparelho_modelo,imei,defeito_relatado,data_previsao,observacoes,valor_servico,valor_sinal,valor_total)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+      [numero, cliente_id, tecnico_id || null, aparelho_marca, aparelho_modelo, imei || null, defeito_relatado, data_previsao || null, observacoes || null, servico, sinal, servico]
     );
     res.redirect(`/ordens/${rows[0].id}`);
   } catch (err) {
@@ -66,11 +68,11 @@ router.get('/:id/editar', async (req, res) => {
 });
 
 router.post('/:id', async (req, res) => {
-  const { cliente_id, tecnico_id, aparelho_marca, aparelho_modelo, imei, defeito_relatado, diagnostico, solucao, status, valor_servico, forma_pagamento, data_previsao, observacoes } = req.body;
+  const { cliente_id, tecnico_id, aparelho_marca, aparelho_modelo, imei, defeito_relatado, diagnostico, solucao, status, valor_servico, valor_sinal, forma_pagamento, data_previsao, observacoes } = req.body;
 
   const { rows: [osAtual] } = await pool.query('SELECT * FROM ordens_servico WHERE id=$1', [req.params.id]);
 
-  const updates = { cliente_id, tecnico_id: tecnico_id || null, aparelho_marca, aparelho_modelo, imei: imei || null, defeito_relatado, diagnostico: diagnostico || null, solucao: solucao || null, status, valor_servico: valor_servico || 0, forma_pagamento: forma_pagamento || null, data_previsao: data_previsao || null, observacoes: observacoes || null };
+  const updates = { cliente_id, tecnico_id: tecnico_id || null, aparelho_marca, aparelho_modelo, imei: imei || null, defeito_relatado, diagnostico: diagnostico || null, solucao: solucao || null, status, valor_servico: valor_servico || 0, valor_sinal: valor_sinal || 0, forma_pagamento: forma_pagamento || null, data_previsao: data_previsao || null, observacoes: observacoes || null };
   if (status === 'pronto' || status === 'entregue') updates.data_conclusao = new Date();
   if (status === 'entregue') updates.data_entrega = new Date();
 
@@ -103,18 +105,55 @@ router.post('/:id', async (req, res) => {
   res.redirect(`/ordens/${req.params.id}`);
 });
 
+// Status rápido (botões na show)
+router.post('/:id/status', async (req, res) => {
+  const { status } = req.body;
+  const valid = ['aberta','aguardando_peca','em_reparo','pronto','entregue','cancelada'];
+  if (!valid.includes(status)) return res.redirect(`/ordens/${req.params.id}`);
+
+  const { rows: [osAtual] } = await pool.query('SELECT * FROM ordens_servico WHERE id=$1', [req.params.id]);
+  if (!osAtual) return res.redirect('/ordens');
+
+  const updates = { status };
+  if (status === 'pronto' || status === 'entregue') updates.data_conclusao = new Date();
+  if (status === 'entregue') updates.data_entrega = new Date();
+
+  const cols = Object.keys(updates);
+  const vals = Object.values(updates);
+  await pool.query(`UPDATE ordens_servico SET ${cols.map((c,i)=>`${c}=$${i+1}`).join(',')} WHERE id=$${cols.length+1}`, [...vals, req.params.id]);
+
+  if (status === 'entregue' && osAtual.status !== 'entregue') {
+    const totalOS = Number(osAtual.valor_total || 0);
+    if (totalOS > 0) {
+      await pool.query(
+        "INSERT INTO contas (tipo,descricao,valor,data_vencimento,status,data_pagamento,categoria) VALUES ('receber',$1,$2,CURRENT_DATE,'pago',CURRENT_DATE,'Ordem de Serviço')",
+        [`OS ${osAtual.numero} - ${osAtual.aparelho_marca} ${osAtual.aparelho_modelo}`, totalOS]
+      );
+      const { rows: [caixaAberto] } = await pool.query("SELECT id FROM caixa WHERE status='aberto' LIMIT 1");
+      if (caixaAberto) {
+        await pool.query(
+          'INSERT INTO movimentacoes_caixa (caixa_id,tipo,categoria,descricao,valor,forma_pagamento,referencia_tipo,referencia_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+          [caixaAberto.id, 'entrada', 'Ordem de Serviço', `OS ${osAtual.numero}`, totalOS, osAtual.forma_pagamento || 'Pix', 'os', req.params.id]
+        );
+      }
+    }
+  }
+  res.redirect(`/ordens/${req.params.id}`);
+});
+
 router.post('/:id/pecas', async (req, res) => {
   const { produto_id, quantidade } = req.body;
-  const { rows: [prod] } = await pool.query('SELECT preco_venda, estoque_atual FROM produtos WHERE id=$1', [produto_id]);
+  const { rows: [prod] } = await pool.query('SELECT preco_venda, preco_custo, estoque_atual FROM produtos WHERE id=$1', [produto_id]);
   if (!prod || prod.estoque_atual < quantidade) {
     return res.redirect(`/ordens/${req.params.id}?error=Estoque insuficiente`);
   }
   const subtotal = prod.preco_venda * quantidade;
-  await pool.query('INSERT INTO os_pecas (ordem_id,produto_id,quantidade,preco_unitario,subtotal) VALUES ($1,$2,$3,$4,$5)',
-    [req.params.id, produto_id, quantidade, prod.preco_venda, subtotal]);
+  const custoUnit = Number(prod.preco_custo || 0);
+  await pool.query('INSERT INTO os_pecas (ordem_id,produto_id,quantidade,preco_unitario,preco_custo,subtotal) VALUES ($1,$2,$3,$4,$5,$6)',
+    [req.params.id, produto_id, quantidade, prod.preco_venda, custoUnit, subtotal]);
   await pool.query('UPDATE produtos SET estoque_atual=estoque_atual-$1 WHERE id=$2', [quantidade, produto_id]);
-  const { rows: pecasOS } = await pool.query('SELECT COALESCE(SUM(subtotal),0) as total FROM os_pecas WHERE ordem_id=$1', [req.params.id]);
-  await pool.query('UPDATE ordens_servico SET valor_pecas=$1, valor_total=valor_servico+$1 WHERE id=$2', [pecasOS[0].total, req.params.id]);
+  const { rows: pecasOS } = await pool.query('SELECT COALESCE(SUM(subtotal),0) as total_venda, COALESCE(SUM(preco_custo*quantidade),0) as total_custo FROM os_pecas WHERE ordem_id=$1', [req.params.id]);
+  await pool.query('UPDATE ordens_servico SET valor_pecas=$1, custo_pecas=$2, valor_total=valor_servico+$1 WHERE id=$3', [pecasOS[0].total_venda, pecasOS[0].total_custo, req.params.id]);
   res.redirect(`/ordens/${req.params.id}`);
 });
 
@@ -123,8 +162,8 @@ router.post('/:id/pecas/:pecaId/remover', async (req, res) => {
   if (peca) {
     await pool.query('UPDATE produtos SET estoque_atual=estoque_atual+$1 WHERE id=$2', [peca.quantidade, peca.produto_id]);
     await pool.query('DELETE FROM os_pecas WHERE id=$1', [req.params.pecaId]);
-    const { rows: pecasOS } = await pool.query('SELECT COALESCE(SUM(subtotal),0) as total FROM os_pecas WHERE ordem_id=$1', [req.params.id]);
-    await pool.query('UPDATE ordens_servico SET valor_pecas=$1, valor_total=valor_servico+$1 WHERE id=$2', [pecasOS[0].total, req.params.id]);
+    const { rows: pecasOS } = await pool.query('SELECT COALESCE(SUM(subtotal),0) as total_venda, COALESCE(SUM(preco_custo*quantidade),0) as total_custo FROM os_pecas WHERE ordem_id=$1', [req.params.id]);
+    await pool.query('UPDATE ordens_servico SET valor_pecas=$1, custo_pecas=$2, valor_total=valor_servico+$1 WHERE id=$3', [pecasOS[0].total_venda, pecasOS[0].total_custo, req.params.id]);
   }
   res.redirect(`/ordens/${req.params.id}`);
 });
